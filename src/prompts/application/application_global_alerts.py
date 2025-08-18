@@ -41,5 +41,3 @@ class ApplicationGlobalAlertsPrompts:
             ('app_global_alert_config_enable', cls.app_global_alert_config_enable),
             ('app_global_alert_config_restore', cls.app_global_alert_config_restore),
         ]
-
-# Made with Bob
