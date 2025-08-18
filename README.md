@@ -169,7 +169,7 @@ uv run src/core/server.py [OPTIONS]
 - `--transport <mode>`: Transport mode (choices: `streamable-http`, `stdio`)
 - `--debug`: Enable debug mode with additional logging
 - `--log-level <level>`: Set the logging level (choices: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`)
-- `--tools <categories>`: Comma-separated list of tool categories to enable (e.g., `infra,app,events`)
+- `--tools <categories>`: Comma-separated list of tool categories to enable (e.g., `infra,app,events`).Also controls which prompts are enabled. If not provided, all tools and prompts are enabled.
 - `--list-tools`: List all available tool categories and exit
 - `--port <port>`: Port to listen on (default: 8000)
 - `--help`: Show help message and exit
@@ -188,10 +188,10 @@ uv run src/core/server.py --transport streamable-http --debug
 # Start with a specific log level
 uv run src/core/server.py --transport streamable-http --log-level WARNING
 
-# Start with specific tool categories only
+# Start with specific tool & prompts categories only
 uv run src/core/server.py --transport streamable-http --tools infra,events
 
-# Combine options (specific log level, custom tools)
+# Combine options (specific log level, custom tools & PROMPTS)
 uv run src/core/server.py --transport streamable-http --log-level DEBUG --tools app,events
 ```
 
@@ -225,7 +225,7 @@ uv run src/core/server.py --transport stdio
 
 ### Tool Categories
 
-You can optimize server performance by enabling only the tool categories you need:
+You can optimize server performance by enabling only the tool & prompts categories you need:
 
 ```bash
 # List all available categories
@@ -237,9 +237,9 @@ uv run src/core/server.py --transport streamable-http --tools events
 ```
 
 **Available Categories:**
-- **`infra`**: Infrastructure monitoring tools (resources, catalog, topology, analyze, metrics)
-- **`app`**: Application performance tools (resources, metrics, alerts, catalog, topology, analyze)
-- **`events`**: Event monitoring tools (Kubernetes events, agent monitoring)
+- **`infra`**: Infrastructure monitoring tools & prompts (resources, catalog, topology, analyze, metrics)
+- **`app`**: Application performance tools & prompts (resources, metrics, alerts, catalog, topology, analyze, settings, global alerts)
+- **`events`**: Event monitoring tools & prompts(Kubernetes events, agent monitoring)
 
 ### Verifying Server Status
 
