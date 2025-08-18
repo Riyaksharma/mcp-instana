@@ -146,13 +146,21 @@ class TestMCPServer(unittest.TestCase):
 
     @patch('src.core.server.FastMCP')
     @patch('src.core.server.create_clients')
-    def test_create_app(self, mock_create_clients, mock_fast_mcp):
+    @patch('src.core.server.get_prompt_categories')
+    def test_create_app(self, mock_get_prompt_categories, mock_create_clients, mock_fast_mcp):
         mock_server = MagicMock()
         mock_fast_mcp.return_value = mock_server
         mock_state = MCPState()
         mock_state.events_client = MagicMock()
         mock_state.events_client.get_agent_monitoring_events = MagicMock()
         mock_create_clients.return_value = mock_state
+
+        # Mock the prompt categories
+        mock_get_prompt_categories.return_value = {
+            "app": [('app_prompts', [('app_prompt1', MagicMock())])],
+            "infra": [('infra_prompts', [('infra_prompt1', MagicMock())])]
+        }
+
         token = "test_token"
         base_url = "https://test.instana.io"
         result, tools_registered = create_app(token, base_url)
@@ -387,12 +395,19 @@ class TestPromptCategories(unittest.TestCase):
     @patch('src.core.server.FastMCP')
     @patch('src.core.server.create_clients')
     @patch('src.core.server.logger')
-    def test_app_category_only(self, mock_logger, mock_create_clients, mock_fast_mcp):
+    @patch('src.core.server.get_prompt_categories')
+    def test_app_category_only(self, mock_get_prompt_categories, mock_logger, mock_create_clients, mock_fast_mcp):
         """Test that only app prompts are registered when app category is enabled"""
         mock_server = MagicMock()
         mock_fast_mcp.return_value = mock_server
         mock_state = MagicMock()
         mock_create_clients.return_value = mock_state
+
+        # Mock the prompt categories
+        mock_get_prompt_categories.return_value = {
+            "app": [('app_prompts', [('app_prompt1', MagicMock())])],
+            "infra": [('infra_prompts', [('infra_prompt1', MagicMock())])]
+        }
 
         # Call create_app with only app category enabled
         create_app("test_token", "https://test.instana.io", 8000, "app")
@@ -413,12 +428,19 @@ class TestPromptCategories(unittest.TestCase):
     @patch('src.core.server.FastMCP')
     @patch('src.core.server.create_clients')
     @patch('src.core.server.logger')
-    def test_infra_category_only(self, mock_logger, mock_create_clients, mock_fast_mcp):
+    @patch('src.core.server.get_prompt_categories')
+    def test_infra_category_only(self, mock_get_prompt_categories, mock_logger, mock_create_clients, mock_fast_mcp):
         """Test that only infra prompts are registered when infra category is enabled"""
         mock_server = MagicMock()
         mock_fast_mcp.return_value = mock_server
         mock_state = MagicMock()
         mock_create_clients.return_value = mock_state
+
+        # Mock the prompt categories
+        mock_get_prompt_categories.return_value = {
+            "app": [('app_prompts', [('app_prompt1', MagicMock())])],
+            "infra": [('infra_prompts', [('infra_prompt1', MagicMock())])]
+        }
 
         # Call create_app with only infra category enabled
         create_app("test_token", "https://test.instana.io", 8000, "infra")
@@ -439,12 +461,19 @@ class TestPromptCategories(unittest.TestCase):
     @patch('src.core.server.FastMCP')
     @patch('src.core.server.create_clients')
     @patch('src.core.server.logger')
-    def test_both_categories(self, mock_logger, mock_create_clients, mock_fast_mcp):
+    @patch('src.core.server.get_prompt_categories')
+    def test_both_categories(self, mock_get_prompt_categories, mock_logger, mock_create_clients, mock_fast_mcp):
         """Test that both app and infra prompts are registered when both categories are enabled"""
         mock_server = MagicMock()
         mock_fast_mcp.return_value = mock_server
         mock_state = MagicMock()
         mock_create_clients.return_value = mock_state
+
+        # Mock the prompt categories
+        mock_get_prompt_categories.return_value = {
+            "app": [('app_prompts', [('app_prompt1', MagicMock())])],
+            "infra": [('infra_prompts', [('infra_prompt1', MagicMock())])]
+        }
 
         # Call create_app with both categories enabled
         create_app("test_token", "https://test.instana.io", 8000, "app,infra")
@@ -899,4 +928,5 @@ class TestMCPServerAsync(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
 

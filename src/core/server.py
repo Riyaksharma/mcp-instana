@@ -77,6 +77,7 @@ class MCPState:
     app_topology_client: Any = None
     app_analyze_client: Any = None
     app_settings_client: Any = None
+    app_global_alert_client: Any = None
 
 # Global variables to store credentials for lifespan
 _global_token = None
@@ -226,6 +227,9 @@ def get_client_categories():
         from src.application.application_alert_config import ApplicationAlertMCPTools
         from src.application.application_analyze import ApplicationAnalyzeMCPTools
         from src.application.application_catalog import ApplicationCatalogMCPTools
+        from src.application.application_global_alert_config import (
+            ApplicationGlobalAlertMCPTools,
+        )
         from src.application.application_metrics import ApplicationMetricsMCPTools
         from src.application.application_resources import ApplicationResourcesMCPTools
         from src.application.application_settings import ApplicationSettingsMCPTools
@@ -266,6 +270,7 @@ def get_client_categories():
             ('app_topology_client', ApplicationTopologyMCPTools),
             ('app_analyze_client', ApplicationAnalyzeMCPTools),
             ('app_settings_client', ApplicationSettingsMCPTools),
+            ('app_global_alert_client', ApplicationGlobalAlertMCPTools)
         ],
         "events": [
             ('events_client', AgentMonitoringEventsMCPTools),
@@ -277,6 +282,9 @@ def get_prompt_categories():
     # Import the class-based prompts
     from src.prompts.application.application_alerts import ApplicationAlertsPrompts
     from src.prompts.application.application_catalog import ApplicationCatalogPrompts
+    from src.prompts.application.application_global_alerts import (
+        ApplicationGlobalAlertsPrompts,
+    )
     from src.prompts.application.application_metrics import ApplicationMetricsPrompts
     from src.prompts.application.application_resources import (
         ApplicationResourcesPrompts,
@@ -311,6 +319,7 @@ def get_prompt_categories():
     app_settings_prompts = ApplicationSettingsPrompts.get_prompts()
     app_topology_prompts = ApplicationTopologyPrompts.get_prompts()
     app_alert_prompts = ApplicationAlertsPrompts.get_prompts()
+    app_global_alert_prompts = ApplicationGlobalAlertsPrompts.get_prompts()
 
     # Return the categories with their prompt groups
     return {
@@ -328,6 +337,7 @@ def get_prompt_categories():
             ('app_settings_prompts', app_settings_prompts),
             ('app_topology_prompts', app_topology_prompts),
             ('app_alert_prompts', app_alert_prompts),
+            ('app_global_alert_prompts', app_global_alert_prompts),
         ],
     }
 
