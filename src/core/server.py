@@ -187,9 +187,6 @@ def create_app(token: str, base_url: str, port: int = 8000, enabled_categories: 
         # Register any remaining prompts that might not be in categories
         uncategorized_count = 0
 
-        # Skip registering uncategorized prompts for now as it's causing issues
-        # We've already registered the categorized prompts which is what we wanted
-
         # Just log the count of remaining prompts
         remaining_prompts = len(PROMPT_REGISTRY) - len(registered_prompts)
         if remaining_prompts > 0:
