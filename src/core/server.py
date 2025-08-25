@@ -234,6 +234,8 @@ def get_client_categories():
         from src.application.application_resources import ApplicationResourcesMCPTools
         from src.application.application_settings import ApplicationSettingsMCPTools
         from src.application.application_topology import ApplicationTopologyMCPTools
+        from src.automation.action_catalog import ActionCatalogMCPTools
+        from src.automation.action_history import ActionHistoryMCPTools
         from src.event.events_tools import AgentMonitoringEventsMCPTools
         from src.infrastructure.infrastructure_analyze import (
             InfrastructureAnalyzeMCPTools,
@@ -274,6 +276,10 @@ def get_client_categories():
         ],
         "events": [
             ('events_client', AgentMonitoringEventsMCPTools),
+        ],
+        "automation": [
+            ('action_catalog_client', ActionCatalogMCPTools),
+            ('action_history_client', ActionHistoryMCPTools),
         ]
     }
 
@@ -389,7 +395,7 @@ def main():
             "--tools",
             type=str,
             metavar='<categories>',
-            help="Comma-separated list of tool categories to enable (--tools infra,app,events). Also controls which prompts are enabled. If not provided, all tools and prompts are enabled."
+            help="Comma-separated list of tool categories to enable (--tools infra,app,events,automation). Also controls which prompts are enabled. If not provided, all tools and prompts are enabled."
         )
         parser.add_argument(
             "--list-tools",
@@ -436,7 +442,7 @@ def main():
         else:
             set_log_level(args.log_level)
 
-        all_categories = {"infra", "app", "events"}
+        all_categories = {"infra", "app", "events", "automation"}
 
         # Handle --list-tools option
         if args.list_tools:
