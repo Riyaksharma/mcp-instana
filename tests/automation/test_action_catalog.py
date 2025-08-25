@@ -11,6 +11,7 @@ import unittest
 from functools import wraps
 from unittest.mock import MagicMock, patch
 
+
 # Create a null handler that will discard all log messages
 class NullHandler(logging.Handler):
     def emit(self, record):
@@ -98,7 +99,7 @@ class TestActionCatalogMCPTools(unittest.TestCase):
 
         # Create an instance of ActionCatalogMCPTools for testing
         self.action_catalog_tools = ActionCatalogMCPTools(
-            read_token="test_token", 
+            read_token="test_token",
             base_url="https://test.instana.com"
         )
 
