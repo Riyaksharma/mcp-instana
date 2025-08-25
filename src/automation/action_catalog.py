@@ -192,7 +192,7 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                          api_client=None) -> Dict[str, Any]:
         """
         Get a list of available automation actions from the action catalog.
-        
+
         Args:
             page: Page number for pagination (optional)
             page_size: Number of actions per page (optional)
@@ -202,13 +202,13 @@ class ActionCatalogMCPTools(BaseInstanaClient):
             order_direction: Sort direction ('asc' or 'desc') (optional)
             ctx: Optional[Dict[str, Any]]: The context for the action retrieval
             api_client: Optional[ActionCatalogApi]: The API client for action catalog
-            
+
         Returns:
             Dict[str, Any]: The list of available automation actions
         """
         try:
             logger.debug("get_actions called")
-            
+
             # Call the get_actions method from the SDK
             result = api_client.get_actions(
                 page=page,
@@ -218,7 +218,7 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                 order_by=order_by,
                 order_direction=order_direction
             )
-            
+
             # Convert the result to a dictionary
             if hasattr(result, 'to_dict'):
                 result_dict = result.to_dict()
@@ -228,10 +228,10 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                     "success": True,
                     "message": "Actions retrieved successfully"
                 }
-            
+
             logger.debug(f"Result from get_actions: {result_dict}")
             return result_dict
-            
+
         except Exception as e:
             logger.error(f"Error in get_actions: {e}")
             return {"error": f"Failed to get actions: {e!s}"}
@@ -244,24 +244,24 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                                 api_client=None) -> Dict[str, Any]:
         """
         Get detailed information about a specific automation action by ID.
-        
+
         Args:
             action_id: The unique identifier of the action (required)
             ctx: Optional[Dict[str, Any]]: The context for the action details retrieval
             api_client: Optional[ActionCatalogApi]: The API client for action catalog
-            
+
         Returns:
             Dict[str, Any]: The detailed information about the automation action
         """
         try:
             if not action_id:
                 return {"error": "action_id is required"}
-                
+
             logger.debug(f"get_action_details called with action_id: {action_id}")
-            
+
             # Call the get_action method from the SDK
             result = api_client.get_action(action_id=action_id)
-            
+
             # Convert the result to a dictionary
             if hasattr(result, 'to_dict'):
                 result_dict = result.to_dict()
@@ -271,10 +271,10 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                     "success": True,
                     "message": "Action details retrieved successfully"
                 }
-            
+
             logger.debug(f"Result from get_action: {result_dict}")
             return result_dict
-            
+
         except Exception as e:
             logger.error(f"Error in get_action_details: {e}")
             return {"error": f"Failed to get action details: {e!s}"}
@@ -292,7 +292,7 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                             api_client=None) -> Dict[str, Any]:
         """
         Search for automation actions in the action catalog.
-        
+
         Args:
             search: Search term to find actions by name, description, or other attributes (required)
             page: Page number for pagination (optional)
@@ -302,16 +302,16 @@ class ActionCatalogMCPTools(BaseInstanaClient):
             order_direction: Sort direction ('asc' or 'desc') (optional)
             ctx: Optional[Dict[str, Any]]: The context for the action search
             api_client: Optional[ActionCatalogApi]: The API client for action catalog
-            
+
         Returns:
             Dict[str, Any]: The search results for automation actions
         """
         try:
             if not search:
                 return {"error": "search parameter is required"}
-                
+
             logger.debug(f"search_actions called with search: {search}")
-            
+
             # Call the search_actions method from the SDK
             result = api_client.search_actions(
                 search=search,
@@ -321,7 +321,7 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                 order_by=order_by,
                 order_direction=order_direction
             )
-            
+
             # Convert the result to a dictionary
             if hasattr(result, 'to_dict'):
                 result_dict = result.to_dict()
@@ -331,10 +331,10 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                     "success": True,
                     "message": "Action search completed successfully"
                 }
-            
+
             logger.debug(f"Result from search_actions: {result_dict}")
             return result_dict
-            
+
         except Exception as e:
             logger.error(f"Error in search_actions: {e}")
             return {"error": f"Failed to search actions: {e!s}"}
@@ -346,20 +346,20 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                               api_client=None) -> Dict[str, Any]:
         """
         Get a list of available action types in the action catalog.
-        
+
         Args:
             ctx: Optional[Dict[str, Any]]: The context for the action types retrieval
             api_client: Optional[ActionCatalogApi]: The API client for action catalog
-            
+
         Returns:
             Dict[str, Any]: The list of available action types
         """
         try:
             logger.debug("get_action_types called")
-            
+
             # Call the get_action_types method from the SDK
             result = api_client.get_action_types()
-            
+
             # Convert the result to a dictionary
             if hasattr(result, 'to_dict'):
                 result_dict = result.to_dict()
@@ -369,10 +369,10 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                     "success": True,
                     "message": "Action types retrieved successfully"
                 }
-            
+
             logger.debug(f"Result from get_action_types: {result_dict}")
             return result_dict
-            
+
         except Exception as e:
             logger.error(f"Error in get_action_types: {e}")
             return {"error": f"Failed to get action types: {e!s}"}
@@ -384,20 +384,20 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                                    api_client=None) -> Dict[str, Any]:
         """
         Get a list of available action categories in the action catalog.
-        
+
         Args:
             ctx: Optional[Dict[str, Any]]: The context for the action categories retrieval
             api_client: Optional[ActionCatalogApi]: The API client for action catalog
-            
+
         Returns:
             Dict[str, Any]: The list of available action categories
         """
         try:
             logger.debug("get_action_categories called")
-            
+
             # Call the get_action_categories method from the SDK
             result = api_client.get_action_categories()
-            
+
             # Convert the result to a dictionary
             if hasattr(result, 'to_dict'):
                 result_dict = result.to_dict()
@@ -407,10 +407,10 @@ class ActionCatalogMCPTools(BaseInstanaClient):
                     "success": True,
                     "message": "Action categories retrieved successfully"
                 }
-            
+
             logger.debug(f"Result from get_action_categories: {result_dict}")
             return result_dict
-            
+
         except Exception as e:
             logger.error(f"Error in get_action_categories: {e}")
             return {"error": f"Failed to get action categories: {e!s}"}

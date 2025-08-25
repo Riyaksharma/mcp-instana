@@ -4,9 +4,10 @@ Tests for Action Catalog MCP Tools
 This module contains tests for the automation action catalog tools.
 """
 
+from typing import Any, Dict
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from typing import Dict, Any
 
 from src.automation.action_catalog import ActionCatalogMCPTools
 
