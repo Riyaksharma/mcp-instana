@@ -12,7 +12,7 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, fields
-from typing import Any
+from typing import Any, Optional
 
 from dotenv import load_dotenv
 
@@ -78,6 +78,8 @@ class MCPState:
     app_analyze_client: Any = None
     app_settings_client: Any = None
     app_global_alert_client: Any = None
+    action_catalog_client: Any = None
+    action_history_client: Any = None
 
 # Global variables to store credentials for lifespan
 _global_token = None
@@ -196,6 +198,11 @@ def create_app(token: str, base_url: str, port: int = 8000, enabled_categories: 
         if uncategorized_count > 0:
             logger.info(f"  - uncategorized: {uncategorized_count} prompts")
 
+        # Register the prompt help tools
+        server.tool()(show_available_prompts)
+        server.tool()(get_prompt_usage_patterns)
+        logger.info("Registered prompt help tools: show_available_prompts, get_prompt_usage_patterns")
+
 
         return server, tools_registered
 
@@ -234,6 +241,8 @@ def get_client_categories():
         from src.application.application_resources import ApplicationResourcesMCPTools
         from src.application.application_settings import ApplicationSettingsMCPTools
         from src.application.application_topology import ApplicationTopologyMCPTools
+        from src.automation.action_catalog import ActionCatalogMCPTools
+        from src.automation.action_history import ActionHistoryMCPTools
         from src.event.events_tools import AgentMonitoringEventsMCPTools
         from src.infrastructure.infrastructure_analyze import (
             InfrastructureAnalyzeMCPTools,
@@ -274,6 +283,10 @@ def get_client_categories():
         ],
         "events": [
             ('events_client', AgentMonitoringEventsMCPTools),
+        ],
+        "automation": [
+            ('action_catalog_client', ActionCatalogMCPTools),
+            ('action_history_client', ActionHistoryMCPTools),
         ]
     }
 
@@ -336,6 +349,234 @@ def get_prompt_categories():
         ],
     }
 
+def show_available_prompts(category: Optional[str] = None, tool_name: Optional[str] = None) -> str:
+    """
+    Show available example prompts for Instana MCP tools.
+
+    Args:
+        category: Optional category to filter by (e.g., 'app', 'infra')
+        tool_name: Optional specific tool name to get examples for
+
+    Returns:
+        Formatted string with example prompts and their parameters
+    """
+    import inspect
+    from typing import Optional
+
+    prompt_categories = get_prompt_categories()
+
+    def get_parameter_info(func):
+        """Extract parameter information from a function"""
+        original_fn = func.fn
+        signature = inspect.signature(original_fn)
+
+        parameters = []
+        for name, param in signature.parameters.items():
+            # Skip 'self' parameter for class methods
+            if name == 'self':
+                continue
+
+            param_info = {
+                'name': name,
+                'required': param.default == inspect.Parameter.empty,
+                'type': str(param.annotation).replace('typing.', '').replace('Optional[', '').replace(']', ''),
+                'default': None if param.default == inspect.Parameter.empty else param.default
+            }
+            parameters.append(param_info)
+
+        return parameters
+
+    if tool_name:
+        # Show examples for specific tool with parameters
+        for cat, prompt_groups in prompt_categories.items():
+            for _group_name, prompts in prompt_groups:
+                for prompt_name, prompt_func in prompts:
+                    if tool_name.lower() in prompt_name.lower():
+                        # Get parameter information
+                        parameters = get_parameter_info(prompt_func)
+
+                        result = f"📋 Tool: '{prompt_name}'\n\n"
+                        result += f"Category: {cat}\n"
+                        result += f"Description: {prompt_func.description or 'No description available'}\n\n"
+
+                        # Add parameter details
+                        if parameters:
+                            result += "Parameters:\n"
+                            for param in parameters:
+                                required = "Required" if param['required'] else "Optional"
+                                default = f", Default: {param['default']}" if param['default'] is not None else ""
+                                result += f"- {param['name']} ({param['type']}): {required}{default}\n"
+                        else:
+                            result += "Parameters: None\n"
+
+                        # Try to get an example
+                        try:
+                            original_fn = prompt_func.fn
+                            # Try calling with no parameters first
+                            try:
+                                example = original_fn()
+                            except TypeError:
+                                # If it needs parameters, try with sample ones
+                                if 'from_time' in original_fn.__code__.co_varnames:
+                                    example = original_fn(from_time=1234567890, to_time=1234567890)
+                                elif 'alert_ids' in original_fn.__code__.co_varnames:
+                                    example = original_fn(alert_ids=['alert1'], application_id='app123')
+                                elif 'id' in original_fn.__code__.co_varnames:
+                                    example = original_fn(id='config123')
+                                elif 'plugin_id' in original_fn.__code__.co_varnames:
+                                    example = original_fn(plugin_id='host')
+                                elif 'plugin' in original_fn.__code__.co_varnames:
+                                    example = original_fn(plugin='host')
+                                elif 'offline' in original_fn.__code__.co_varnames:
+                                    example = original_fn(offline=False, rollup=60, plugin='host')
+                                elif 'window_size' in original_fn.__code__.co_varnames:
+                                    example = original_fn(window_size=3600, to_time=1234567890, name_filter=None, application_boundary_scope='INBOUND')
+                                elif 'application_ids' in original_fn.__code__.co_varnames:
+                                    example = original_fn(application_ids=['app1', 'app2'])
+                                elif 'service_ids' in original_fn.__code__.co_varnames:
+                                    example = original_fn(service_ids=['svc1', 'svc2'])
+                                elif 'limit' in original_fn.__code__.co_varnames:
+                                    # Check if it's the catalog function with multiple parameters
+                                    if 'use_case' in original_fn.__code__.co_varnames:
+                                        example = original_fn(limit=3, use_case=None, data_source=None, var_from='last 24 hours')
+                                    else:
+                                        example = original_fn(limit=3)
+                                else:
+                                    example = original_fn()
+
+                            result += f"\nExample usage:\n```\n{example.strip()}\n```\n"
+                        except Exception:
+                            result += "\nCould not generate example.\n"
+                        return result
+
+        return f"❌ No examples found for tool '{tool_name}'. Available categories: {', '.join(prompt_categories.keys())}"
+
+    elif category:
+        # Show prompts for specific category with parameters
+        if category in prompt_categories:
+            prompt_groups = prompt_categories[category]
+            result = f"📋 Example prompts for category '{category}':\n\n"
+
+            for group_name, prompts in prompt_groups:
+                result += f"## {group_name}\n"
+                for i, (prompt_name, prompt_func) in enumerate(prompts, 1):
+                    # Get parameter information
+                    parameters = get_parameter_info(prompt_func)
+
+                    result += f"{i}. **{prompt_name}**\n"
+                    result += f"   Description: {prompt_func.description or 'No description available'}\n"
+
+                    # Add parameter details
+                    if parameters:
+                        result += "   Parameters:\n"
+                        for param in parameters:
+                            required = "Required" if param['required'] else "Optional"
+                            default = f", Default: {param['default']}" if param['default'] is not None else ""
+                            result += f"   - {param['name']} ({param['type']}): {required}{default}\n"
+                    else:
+                        result += "   Parameters: None\n"
+
+                    # Try to get an example
+                    try:
+                        original_fn = prompt_func.fn
+                        try:
+                            example = original_fn()
+                        except TypeError:
+                            # If it needs parameters, try with sample ones
+                            if 'from_time' in original_fn.__code__.co_varnames:
+                                example = original_fn(from_time=1234567890, to_time=1234567890)
+                            elif 'alert_ids' in original_fn.__code__.co_varnames:
+                                example = original_fn(alert_ids=['alert1'], application_id='app123')
+                            elif 'id' in original_fn.__code__.co_varnames:
+                                example = original_fn(id='config123')
+                            elif 'plugin_id' in original_fn.__code__.co_varnames:
+                                example = original_fn(plugin_id='host')
+                            elif 'plugin' in original_fn.__code__.co_varnames:
+                                example = original_fn(plugin='host')
+                            elif 'offline' in original_fn.__code__.co_varnames:
+                                example = original_fn(offline=False, rollup=60, plugin='host')
+                            else:
+                                example = original_fn()
+                        result += f"   Example: {example.strip()}\n"
+                    except Exception:
+                        pass
+                    result += "\n"
+            return result
+        else:
+            available_categories = list(prompt_categories.keys())
+            return f"❌ Category '{category}' not found. Available categories: {', '.join(available_categories)}"
+
+    else:
+        # Show all prompts organized by category with parameter info
+        result = "🚀 **Available Example Prompts for Instana MCP Tools**\n\n"
+        result += "Use these example prompts to effectively query your Instana monitoring system:\n\n"
+
+        for cat_name, prompt_groups in prompt_categories.items():
+            result += f"## {cat_name.upper()} Tools\n"
+            for group_name, prompts in prompt_groups:
+                result += f"### {group_name}\n"
+                for i, (prompt_name, prompt_func) in enumerate(prompts[:2], 1):  # Show first 2 examples per group
+                    # Get parameter information
+                    parameters = get_parameter_info(prompt_func)
+
+                    result += f"{i}. **{prompt_name}**\n"
+                    result += f"   Description: {prompt_func.description or 'No description available'}\n"
+
+                    # Add parameter summary
+                    if parameters:
+                        param_list = []
+                        for param in parameters:
+                            required = "*" if param['required'] else ""
+                            param_list.append(f"{param['name']}{required}")
+                        result += f"   Parameters: {', '.join(param_list)} (* = required)\n"
+                    else:
+                        result += "   Parameters: None\n"
+
+                if len(prompts) > 2:
+                    result += f"   ... and {len(prompts) - 2} more prompts\n"
+                result += "\n"
+
+        result += "💡 **Usage Tips:**\n"
+        result += "- Use `show_available_prompts(category='app')` to see all application examples with full parameter details\n"
+        result += "- Use `show_available_prompts(category='infra')` to see all infrastructure examples with full parameter details\n"
+        result += "- Use `show_available_prompts(tool_name='app_alerts')` to see detailed examples for a specific tool\n"
+        result += "- Parameters marked with * are required\n"
+        result += "- Copy and modify these examples to create your own queries\n"
+
+        return result
+
+def get_prompt_usage_patterns() -> str:
+    """
+    Get usage patterns and tips for working with Instana MCP tools.
+
+    Returns:
+        Formatted string with usage patterns and tips
+    """
+
+    result = "📚 **Usage Patterns and Tips for Instana MCP Tools**\n\n"
+
+    result += "## Available Categories\n"
+    result += "• **APP Tools**: Application monitoring and management\n"
+    result += "  - Application Alerts, Catalog, Metrics, Resources, Settings, Topology\n"
+    result += "• **INFRA Tools**: Infrastructure monitoring and management\n"
+    result += "  - Infrastructure Catalog, Metrics, Resources, Topology, Analysis\n\n"
+
+    result += "## Common Parameters\n"
+    result += "• **Time ranges**: Use `from_time` and `to_time` for specific periods\n"
+    result += "• **Filters**: Use `name_filter`, `severity`, `application_id` for targeted queries\n"
+    result += "• **Metrics**: Common metrics include latency, error_rate, throughput, cpu, memory\n"
+    result += "• **Infrastructure**: Use `plugin`, `plugin_id`, `offline`, `rollup` for infrastructure queries\n"
+    result += "• **Pagination**: Use `limit` and `offset` for large result sets\n\n"
+
+    result += "## Example Usage\n"
+    result += "1. Start with `show_available_prompts()` to see all available prompts\n"
+    result += "2. Use `show_available_prompts(category='app')` for application examples\n"
+    result += "3. Use `show_available_prompts(category='infra')` for infrastructure examples\n"
+    result += "4. Use `show_available_prompts(tool_name='app_alerts')` for specific tools\n"
+    result += "5. Copy and modify the examples to create your own queries\n"
+
+    return result
+
 def get_enabled_client_configs(enabled_categories: str):
     """Get client configurations based on enabled categories"""
     # Get client categories with lazy imports
@@ -389,7 +630,7 @@ def main():
             "--tools",
             type=str,
             metavar='<categories>',
-            help="Comma-separated list of tool categories to enable (--tools infra,app,events). Also controls which prompts are enabled. If not provided, all tools and prompts are enabled."
+            help="Comma-separated list of tool categories to enable (--tools infra,app,events,automation). Also controls which prompts are enabled. If not provided, all tools and prompts are enabled."
         )
         parser.add_argument(
             "--list-tools",
@@ -436,7 +677,7 @@ def main():
         else:
             set_log_level(args.log_level)
 
-        all_categories = {"infra", "app", "events"}
+        all_categories = {"infra", "app", "events", "automation" }
 
         # Handle --list-tools option
         if args.list_tools:

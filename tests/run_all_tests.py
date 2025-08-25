@@ -307,6 +307,8 @@ def run_all_tests(test_path: Optional[str] = None, verbose: bool = False) -> boo
             'tests.prompts.infrastructure.test_infrastructure_resources',
             'tests.prompts.infrastructure.test_infrastructure_topology',
             'tests.prompts.infrastructure.test_infrastructure_catalog',
+            'tests.automation.test_action_catalog.py',
+            'tests.automation.test_action_history.py'
         ]
 
         all_tests = unittest.TestSuite()
