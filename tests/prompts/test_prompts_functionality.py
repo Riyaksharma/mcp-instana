@@ -26,6 +26,7 @@ from src.prompts.infrastructure.infrastructure_topology import (
     InfrastructureTopologyPrompts,
 )
 
+
 class TestPromptsFunctionality:
     """Test cases for prompts functionality."""
 
