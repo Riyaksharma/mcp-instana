@@ -336,5 +336,3 @@ class ActionHistoryMCPTools(BaseInstanaClient):
         except Exception as e:
             logger.error(f"Error in delete_action_instance: {e}")
             return {"error": f"Failed to delete action instance: {e!s}"}
-
-# Made with Bob
