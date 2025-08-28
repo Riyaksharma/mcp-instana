@@ -30,6 +30,7 @@ def with_header_auth(api_class, allow_mock=False):
     - HTTP Mode: Extracts credentials from HTTP headers (fails if missing)
     - STDIO Mode: Uses constructor-based authentication (fails if missing)
     - Mock Mode: Allows injection of mock clients for testing (when allow_mock=True)
+    - JWT Mode: Validates JWT tokens and extracts Instana credentials from claims
 
     Args:
         api_class: The Instana API class to instantiate (e.g., InfrastructureTopologyApi,
@@ -61,6 +62,61 @@ def with_header_auth(api_class, allow_mock=False):
                     from fastmcp.server.dependencies import get_http_headers
                     headers = get_http_headers()
 
+                    # Check for JWT authentication first
+                    try:
+                        from src.core.jwt_auth import jwt_validator
+                        jwt_token = jwt_validator.extract_jwt_token(headers)
+
+                        if jwt_token:
+                            print(" JWT token detected, attempting validation", file=sys.stderr)
+
+                            # Validate JWT token
+                            jwt_result = jwt_validator.validate_jwt_token(jwt_token)
+
+                            if jwt_result["valid"]:
+                                # Extract Instana credentials from JWT claims
+                                credentials = jwt_validator.get_instana_credentials_from_jwt(jwt_result["claims"])
+
+                                if credentials:
+                                    instana_token, instana_base_url = credentials
+                                    print(" Using JWT-based authentication (HTTP mode)", file=sys.stderr)
+                                    print(f" instana_base_url: {instana_base_url}", file=sys.stderr)
+
+                                    # Import SDK components
+                                    from instana_client.api_client import ApiClient
+                                    from instana_client.configuration import (
+                                        Configuration,
+                                    )
+
+                                    # Create API client from JWT credentials
+                                    configuration = Configuration()
+                                    configuration.host = instana_base_url
+                                    configuration.api_key['ApiKeyAuth'] = instana_token
+                                    configuration.api_key_prefix['ApiKeyAuth'] = 'apiToken'
+                                    configuration.default_headers = {"User-Agent": "MCP-server/0.1.0"}
+
+                                    api_client_instance = ApiClient(configuration=configuration)
+                                    api_instance = api_class(api_client=api_client_instance)
+
+                                    # Add the API instance to kwargs so the decorated function can use it
+                                    kwargs['api_client'] = api_instance
+
+                                    # Call the original function
+                                    return await func(self, *args, **kwargs)
+                                else:
+                                    error_msg = "JWT token valid but no Instana credentials found in claims"
+                                    print(f" {error_msg}", file=sys.stderr)
+                                    return {"error": error_msg}
+                            else:
+                                error_msg = f"JWT validation failed: {jwt_result['error']}"
+                                print(f" {error_msg}", file=sys.stderr)
+                                return {"error": error_msg}
+                    except ImportError:
+                        print(" JWT authentication module not available, falling back to API token", file=sys.stderr)
+                    except Exception as e:
+                        print(f" JWT authentication error: {e}", file=sys.stderr)
+
+                    # Fall back to API token authentication
                     instana_token = headers.get("instana-api-token")
                     instana_base_url = headers.get("instana-base-url")
 

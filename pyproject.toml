@@ -34,7 +34,7 @@ dependencies = [
     "coverage>=7.10.1",
     "dataclasses-json==0.6.7",
     "fastapi==0.116.1",
-    "fastmcp==2.10.3",
+    "fastmcp>=2.11.0",
     "filelock==3.18.0",
     "frozenlist==1.5.0",
     "fsspec==2025.3.2",
@@ -87,12 +87,14 @@ dependencies = [
     "pydantic==2.11.7",
     "pydantic-settings==2.10.1",
     "pydantic_core==2.33.2",
+    "PyJWT==2.8.0",
     "pydeck==0.9.1",
     "Pygments==2.19.1",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
     "pytest-cov>=6.2.1",
     "pytest-mock>=3.14.1",
+    "httpx>=0.28.1",
     "python-dateutil==2.9.0.post0",
     "python-dotenv==1.1.0",
     "pytz==2025.2",
@@ -131,10 +133,13 @@ dependencies = [
     "yarl==1.19.0",
     "zstandard==0.23.0",
     "ruff==0.5.0",
+    "PyJWT==2.8.0",
 ]
 
 [project.scripts]
 mcp-instana = "src.core.server:main"
+mcp-instana-sse = "src.core.sse_cli:main"
+mcp-instana-http-jwt = "src.core.http_server_with_jwt:main"
 test = "tests.run_all_tests:main"
 test-coverage = "tests.run_all_tests_with_coverage:main"
 

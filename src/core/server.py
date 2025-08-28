@@ -131,10 +131,24 @@ async def lifespan(server: FastMCP) -> AsyncIterator[MCPState]:
         # Yield empty state if client creation failed
         yield MCPState()
 
-def create_app(token: str, base_url: str, port: int = 8000, enabled_categories: str = "all") -> tuple[FastMCP, int]:
+def create_app(token: str, base_url: str, port: int = 8000, enabled_categories: str = "all", use_auth_providers: bool = False) -> tuple[FastMCP, int]:
     """Create and configure the MCP server with the given credentials."""
     try:
         server = FastMCP(name="Instana MCP Server", host="0.0.0.0", port=port)
+        
+        # Configure auth providers if requested
+        if use_auth_providers:
+            try:
+                from src.core.auth_providers import get_auth_providers
+                auth_providers = get_auth_providers()
+                if auth_providers:
+                    server.auth_providers = auth_providers
+                    logger.info(f"Configured {len(auth_providers)} auth provider(s)")
+                else:
+                    logger.warning("Auth providers requested but none configured")
+            except Exception as e:
+                logger.error(f"Failed to configure auth providers: {e}")
+                # Continue without auth providers
 
         # Only create and register enabled clients/tools
         clients_state = create_clients(token, base_url, enabled_categories)
@@ -402,6 +416,11 @@ def main():
             default=8000,
             help="Port to listen on (default: 8000)"
         )
+        parser.add_argument(
+            "--auth-providers",
+            action="store_true",
+            help="Enable custom auth providers (JWT token verification)"
+        )
         # Check for help arguments before parsing
         if len(sys.argv) > 1 and any(arg in ['-h','--h','--help','-help'] for arg in sys.argv[1:]):
             # Check if help is combined with other arguments
@@ -498,7 +517,7 @@ def main():
         # Create and configure the MCP server
         try:
             enabled_categories = ",".join(enabled)
-            app, registered_tool_count = create_app(INSTANA_API_TOKEN, INSTANA_BASE_URL, args.port, enabled_categories)
+            app, registered_tool_count = create_app(INSTANA_API_TOKEN, INSTANA_BASE_URL, args.port, enabled_categories, args.auth_providers)
         except Exception as e:
             print(f"Failed to create MCP server: {e}", file=sys.stderr)
             sys.exit(1)

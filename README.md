@@ -181,7 +181,7 @@ This design ensures secure credential transmission where credentials are only se
 
 ## Starting the Local MCP Server
 
-Before configuring any MCP client (Claude Desktop, GitHub Copilot, or custom MCP clients), you need to start the local MCP server. The server supports two transport modes: **Streamable HTTP** and **Stdio**.
+Before configuring any MCP client (Claude Desktop, GitHub Copilot, or custom MCP clients), you need to start the local MCP server. The server supports **Streamable HTTP** and **Stdio** transport modes, with optional **JWT Authentication** for HTTP mode.
 
 ### Server Command Options
 
@@ -208,6 +208,7 @@ uv run src/core/server.py [OPTIONS]
 - `--tools <categories>`: Comma-separated list of tool categories to enable (e.g., infra,app,events). Enabling a category will also enable its related prompts. For example: `--tools infra` enables the infra tools and all infra-related prompts.
 - `--list-tools`: List all available tool categories and exit
 - `--port <port>`: Port to listen on (default: 8000)
+- `--auth-providers`: Enable custom auth providers (JWT token verification)
 - `--help`: Show help message and exit
 
 ### Starting in Streamable HTTP Mode
@@ -250,6 +251,12 @@ uv run src/core/server.py --transport streamable-http --tools infra,events
 
 # Combine options (specific log level, custom tools and prompts)
 uv run src/core/server.py --transport streamable-http --log-level DEBUG --tools app,events
+
+# Start with JWT authentication
+uv run src/core/server.py --transport streamable-http --auth-providers
+
+# Start with JWT authentication and specific tools
+uv run src/core/server.py --transport streamable-http --auth-providers --tools infra,app
 ```
 
 **Key Features of Streamable HTTP Mode:**
@@ -258,6 +265,12 @@ uv run src/core/server.py --transport streamable-http --log-level DEBUG --tools 
 - Better suited for shared environments
 - Default port: 8000
 - Endpoint: `http://0.0.0.0:8000/mcp/`
+
+**JWT Authentication Support:**
+- Add `--auth-providers` flag to enable JWT token-based authentication
+- Provides secure token-based access to MCP endpoints
+- Validates JWT tokens and extracts Instana credentials from claims
+- Supports JWKS endpoints, symmetric keys (HMAC), and static public keys
 
 ### Starting in Stdio Mode
 
@@ -295,6 +308,57 @@ uv run src/core/server.py --transport stdio
 - Uses environment variables for authentication
 - Direct communication via stdin/stdout
 - Required for certain MCP client configurations
+
+### Starting with JWT Authentication (HTTP Mode)
+
+**HTTP mode with JWT authentication** provides secure token-based access to the MCP server.
+
+#### Using CLI (PyPI Installation)
+
+```bash
+# Start with JWT authentication
+mcp-instana-http-jwt --port 8000
+
+# Start with specific tool categories
+mcp-instana-http-jwt --tools infra,app
+
+# Start with debug logging
+mcp-instana-http-jwt --debug
+```
+
+#### Using Development Installation
+
+```bash
+# Start with JWT authentication
+python -m src.core.http_server_with_jwt --port 8000
+
+# Start with specific tool categories
+python -m src.core.http_server_with_jwt --tools infra,app
+
+# Start with debug logging
+python -m src.core.http_server_with_jwt --debug
+```
+
+#### Using Startup Script
+
+```bash
+# Start with default settings
+python run_http_jwt_server.py
+
+# Start on specific port
+python run_http_jwt_server.py --port 9000
+
+# Start with specific tools
+python run_http_jwt_server.py --tools infra,app
+```
+
+**Key Features of HTTP Mode with JWT:**
+- JWT token-based authentication
+- Secure access to MCP endpoints
+- Client credential management
+- Default port: 8000
+- Endpoints: `/token`, `/health`, `/tools`, `/mcp/*`
+- Default client credentials: `instana_client` / `instana_secret_1234`
 
 ### Tool Categories
 
@@ -343,9 +407,129 @@ curl http://0.0.0.0:9000/mcp/
 **For Stdio mode:**
 The server will start and wait for stdin input from MCP clients.
 
-### Common Startup Issues
+## JWT Authentication
 
-**Certificate Issues:**
+The MCP Instana server supports JWT (JSON Web Token) authentication for enhanced security when using HTTP mode. This allows you to protect your MCP server with token-based authentication.
+
+### Enabling JWT Authentication
+
+To enable JWT authentication, use the `--auth-providers` flag:
+
+```bash
+# Start server with JWT authentication
+uv run src/core/server.py --transport streamable-http --auth-providers
+
+# Or with specific tools and port
+uv run src/core/server.py --transport streamable-http --auth-providers --tools infra,app --port 9000
+```
+
+### JWT Configuration
+
+JWT authentication requires the following environment variables:
+
+#### Required Environment Variables
+
+```bash
+# Enable JWT authentication
+export FASTMCP_AUTH_JWT_ENABLED="true"
+
+# JWT Audience (must match the 'aud' claim in your JWT tokens)
+export FASTMCP_AUTH_JWT_AUDIENCE="mcp-instana-api"
+```
+
+#### JWT Key Configuration (Choose One)
+
+**Option 1: JWKS Endpoint (Recommended for Production)**
+```bash
+# JWKS endpoint URL for automatic key fetching
+export FASTMCP_AUTH_JWT_JWKS_URI="https://your-auth-server.com/.well-known/jwks.json"
+```
+
+**Option 2: Static Public Key**
+```bash
+# RSA/ECDSA public key in PEM format
+export FASTMCP_AUTH_JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+-----END PUBLIC KEY-----"
+```
+
+**Option 3: Symmetric Key (HMAC)**
+```bash
+# Symmetric secret for HMAC algorithms (minimum 32 characters)
+export FASTMCP_AUTH_JWT_PUBLIC_KEY="your-shared-secret-key-minimum-32-chars"
+export FASTMCP_AUTH_JWT_ALGORITHM="HS256"
+```
+
+#### Optional Environment Variables
+
+```bash
+# JWT Algorithm (default: RS256 for asymmetric, HS256 for symmetric)
+export FASTMCP_AUTH_JWT_ALGORITHM="RS256"
+
+# Required scopes (comma-separated)
+export FASTMCP_AUTH_JWT_REQUIRED_SCOPES="read:data,write:data"
+```
+
+### JWT Token Requirements
+
+Your JWT tokens must include the following claims:
+
+- **`aud` (Audience)**: Must match `FASTMCP_AUTH_JWT_AUDIENCE`
+- **`iat` (Issued At)**: Token issuance timestamp
+- **`exp` (Expiration Time)**: Token expiration timestamp (server reports error if expired, client handles refresh)
+- **`instana_token`**: Your Instana API token
+- **`instana_base_url`**: Your Instana instance URL
+
+### Example JWT Token
+
+```json
+{
+  "aud": "mcp-instana-api",
+  "exp": 1735689600,
+  "iat": 1735603200,
+  "sub": "user123",
+  "scope": "read:data,write:data",
+  "instana_token": "your_instana_api_token",
+  "instana_base_url": "https://your-instana-instance.instana.io"
+}
+```
+
+### Using JWT Authentication
+
+When JWT authentication is enabled, clients must include a valid JWT token in the Authorization header. The JWT token should contain the Instana credentials in its claims:
+
+```bash
+# Example request with JWT token containing Instana credentials
+curl -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." \
+     http://localhost:8000/mcp/
+```
+
+The JWT token should include `instana_token` and `instana_base_url` claims, eliminating the need for separate headers.
+
+### JWT Authentication Examples
+
+See the `examples/` directory for complete examples:
+- `examples/jwt_config_example.env` - Environment configuration template
+- `examples/jwt_test_example.py` - Complete test example with token generation and validation
+- `examples/README.md` - Detailed usage instructions
+
+### Security Considerations
+
+1. **Keep your private key secure**: Never expose your JWT signing private key
+2. **Use HTTPS**: Always use HTTPS in production to protect token transmission
+3. **Token expiration**: Set appropriate expiration times for your JWT tokens
+4. **Key rotation**: Implement key rotation strategies for production environments
+5. **Audience validation**: Use specific audience values to prevent token misuse
+
+### Troubleshooting JWT Authentication
+
+- **"JWT configuration incomplete"**: Check that all required environment variables are set
+- **"JWT token expired"**: The server reports expired tokens as errors. The MCP client is responsible for token refresh
+- **"Invalid JWT token"**: Verify the token signature and audience claims
+- **"JWT authentication error"**: Check the server logs for detailed error information
+- **"No Instana credentials found in JWT claims"**: Ensure your JWT token includes `instana_token` and `instana_base_url` claims
+
+### Common Startup Issues
 If you encounter SSL certificate errors, ensure your Python environment has access to system certificates:
 ```bash
 # macOS - Install certificates for Python
@@ -386,7 +570,7 @@ Before configuring Claude Desktop, you need to start the MCP server in Streamabl
 
 **Step 2: Configure Claude Desktop**
 
-Configure Claude Desktop to pass Instana credentials via headers:
+Configure Claude Desktop to use JWT authentication:
 
 ```json:claude_desktop_config.json
 {
@@ -396,13 +580,14 @@ Configure Claude Desktop to pass Instana credentials via headers:
       "args": [
         "mcp-remote", "http://0.0.0.0:8000/mcp/",
         "--allow-http",
-        "--header", "instana-base-url: https://your-instana-instance.instana.io",
-        "--header", "instana-api-token: your_instana_api_token"
+        "--header", "Authorization: Bearer your_jwt_token_with_instana_credentials"
       ]
     }
   }
 }
 ```
+
+**Note:** Your JWT token should contain the Instana credentials (`instana_token` and `instana_base_url`) in its claims.
 
 **Note:** To use npx, we recommend first installing NVM (Node Version Manager), then using it to install Node.js.
 Installation instructions are available at: https://nodejs.org/en/download
@@ -700,6 +885,10 @@ The MCP server supports selective tool loading to optimize performance and reduc
 - **`events`**: Event monitoring tools
   - Events: Kubernetes events, agent monitoring, and system event tracking
 
+- **`automation`**: Automation tools
+  - Action Catalog: Browse, search, and get details about available automation actions
+  - Action History: Submit, track, and manage automation action executions
+
 ### Usage Examples
 
 #### Using CLI (PyPI Installation)
@@ -710,6 +899,9 @@ mcp-instana --tools infra,events --transport streamable-http
 
 # Enable only application tools
 mcp-instana --tools app --transport streamable-http
+
+# Enable only automation tools
+mcp-instana --tools automation --transport streamable-http
 
 # Enable all tools (default behavior)
 mcp-instana --transport streamable-http
