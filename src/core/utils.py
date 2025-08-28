@@ -12,6 +12,12 @@ import requests
 
 # Registry to store all tools
 MCP_TOOLS = {}
+import sys
+def print_mcp_tools():
+    print("\n--- MCP_TOOLS registry ---", file=sys.stderr)
+    for k, v in MCP_TOOLS.items():
+        print(f"Tool: {k} -> {v}", file=sys.stderr)
+    print("--- End MCP_TOOLS registry ---\n", file=sys.stderr)
 
 def register_as_tool(func):
     """Decorator to register a method as an MCP tool."""

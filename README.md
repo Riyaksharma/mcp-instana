@@ -630,7 +630,7 @@ Here is an example of a GitHub Copilot response:
       - [x] Get Events by IDs
       - [x] Get Agent Monitoring Events
       - [x] Get Kubernetes Info Events
-
+      
 ## Available Tools
 
 | Tool                                                          | Category                       | Description                                            |

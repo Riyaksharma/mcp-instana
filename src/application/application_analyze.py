@@ -280,7 +280,38 @@ class ApplicationAnalyzeMCPTools(BaseInstanaClient):
                 }
 
             logger.debug(f"Result from get_traces: {result_dict}")
-            return result_dict
+            import json
+            htmlString = f"""
+            <!doctype html>
+            <html>
+            <head>
+                <meta charset="utf-8" />
+                <title>Instana Traces</title>
+                <style>
+                body {{ font-family: system-ui, sans-serif; padding: 1.5em; }}
+                h2 {{ margin-bottom: .5em; }}
+                pre {{ background:#f6f8fa;padding:1em;border-radius:6px;max-height:400px;overflow:auto; }}
+                </style>
+            </head>
+            <body>
+                <h2>Instana Traces Dashboard</h2>
+                <p>Total traces: {len(result_dict.get('items', []))}</p>
+                <pre>{json.dumps(result_dict.get('items', []), indent=2)}</pre>
+            </body>
+            </html>
+            """
+
+            from datetime import datetime
+            return {
+                "traces": result_dict,
+                "uiResource": {
+                    "resource": {
+                        "uri": f"ui://instana/traces?t={int(datetime.utcnow().timestamp())}",
+                        "mimeType": "text/html",
+                        "text": htmlString,
+                    }
+                }
+            }
         except Exception as e:
             logger.error(f"Error in get_traces: {e}")
             return {"error": f"Failed to get traces: {e!s}"}
