@@ -5,7 +5,7 @@ This module provides website catalog-specific MCP tools for Instana monitoring.
 """
 
 import logging
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 # Import the necessary classes from the SDK
 try:
@@ -69,7 +69,7 @@ class WebsiteCatalogMCPTools(BaseInstanaClient):
                 result_dict = {"metrics": result_list, "count": len(result_list)}
             else:
                 result_dict = {"data": result_list}
-            
+
             logger.debug(f"Result from get_website_catalog_metrics: {result_dict}")
             return result_dict
         except Exception as e:
@@ -117,7 +117,7 @@ class WebsiteCatalogMCPTools(BaseInstanaClient):
                 result_dict = {"tags": result_list, "count": len(result_list)}
             else:
                 result_dict = {"data": result_list}
-            
+
             logger.debug(f"Result from get_website_catalog_tags: {result_dict}")
             return result_dict
         except Exception as e:
@@ -127,7 +127,7 @@ class WebsiteCatalogMCPTools(BaseInstanaClient):
     @register_as_tool
     @with_header_auth(WebsiteCatalogApi)
     async def get_website_tag_catalog(self,
-                                    beacon_type: str,   
+                                    beacon_type: str,
                                     use_case: str,
                                     ctx=None, api_client=None) -> Dict[str, Any]:
         """

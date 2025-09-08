@@ -5,7 +5,7 @@ This module provides website configuration-specific MCP tools for Instana monito
 """
 
 import logging
-from typing import Any, Dict, Optional, Union, List
+from typing import Any, Dict, List, Optional, Union
 
 # Import the necessary classes from the SDK
 try:
@@ -97,10 +97,10 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def create_website(self, 
+    async def create_website(self,
                             name: str,
                             payload: Optional[Dict[str, Any]] = None,
-                            ctx=None, 
+                            ctx=None,
                             api_client=None) -> Dict[str, Any]:
         """
         Create a new website configuration.
@@ -184,7 +184,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
         except Exception as e:
             logger.error(f"Error in create_website: {e}")
             return {"error": f"Failed to create website: {e!s}"}
-            
+
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
     async def delete_website(self, website_id: str, ctx=None, api_client=None) -> Dict[str, Any]:
@@ -214,10 +214,10 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def rename_website(self, 
-                            website_id: str, 
-                            name: Optional[str] = None, 
-                            ctx=None, 
+    async def rename_website(self,
+                            website_id: str,
+                            name: Optional[str] = None,
+                            ctx=None,
                             api_client=None) -> Dict[str, Any]:
         """
         Rename a website configuration.
@@ -238,7 +238,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
             if not website_id:
                 return {"error": "website_id parameter is required"}
-        
+
             # Call the rename_website method from the SDK
             result = api_client.rename_website(website_id=website_id,name=name)
 
@@ -257,9 +257,9 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def get_website_geo_location_configuration(self, 
-                                                    website_id: str, 
-                                                    ctx=None, 
+    async def get_website_geo_location_configuration(self,
+                                                    website_id: str,
+                                                    ctx=None,
                                                     api_client=None) -> Dict[str, Any]:
         """
         Get geo-location configuration for a website.
@@ -294,9 +294,9 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def update_website_geo_location_configuration(self, 
-                                                        website_id: str, 
-                                                        payload: Union[Dict[str, Any], str], 
+    async def update_website_geo_location_configuration(self,
+                                                        website_id: str,
+                                                        payload: Union[Dict[str, Any], str],
                                                         ctx=None, api_client=None) -> Dict[str, Any]:
         """
         Update geo-location configuration for a website.
@@ -313,8 +313,8 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
         """
         try:
             logger.debug("update_website_geo_location_configuration called")
-        
-            # Parse the payload 
+
+            # Parse the payload
             if isinstance(payload, str):
                 logger.debug("payload is a string, attempting to parse")
                 try:
@@ -349,7 +349,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
                 # If payload is already a dictionary, use it directly
                 logger.debug("Using provided payload dictionary")
                 request_body = payload
-                    
+
             try:
                 from instana_client.models.geo_location_configuration import (
                     GeoLocationConfiguration,
@@ -362,23 +362,23 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
             # Create an GeoLocationConfiguration object from the request body
             try:
                 query_params = {}
-                
+
                 # Required field: geo_detail_removal (with alias geoDetailRemoval)
                 # Always provide a default value to ensure the required field is present
                 query_params["geo_detail_removal"] = "NO_REMOVAL"  # Default value
-                
+
                 if request_body:
                     if "geoDetailRemoval" in request_body:
                         query_params["geo_detail_removal"] = request_body["geoDetailRemoval"]
                     elif "geo_detail_removal" in request_body:
                         query_params["geo_detail_removal"] = request_body["geo_detail_removal"]
-                    
+
                     # Optional field: geo_mapping_rules
                     if "geoMappingRules" in request_body:
                         query_params["geo_mapping_rules"] = request_body["geoMappingRules"]
                     elif "geo_mapping_rules" in request_body:
                         query_params["geo_mapping_rules"] = request_body["geo_mapping_rules"]
-                
+
                 logger.debug(f"Creating GeoLocationConfiguration with params: {query_params}")
                 config_object = GeoLocationConfiguration(**query_params)
                 logger.debug("Successfully created GeoLocationConfiguration object")
@@ -444,8 +444,8 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def update_website_ip_masking_configuration(self, 
-                                                        website_id: str, 
+    async def update_website_ip_masking_configuration(self,
+                                                        website_id: str,
                                                         payload: Optional[Dict[str, Any]] = None,
                                                         ctx=None, api_client=None) -> Dict[str, Any]:
         """
@@ -466,8 +466,8 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
         """
         try:
             logger.debug("update_website_geo_location_configuration called")
-        
-            # Parse the payload 
+
+            # Parse the payload
             if isinstance(payload, str):
                 logger.debug("payload is a string, attempting to parse")
                 try:
@@ -502,7 +502,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
                 # If payload is already a dictionary, use it directly
                 logger.debug("Using provided payload dictionary")
                 request_body = payload
-                    
+
             try:
                 from instana_client.models.ip_masking_configuration import (
                     IpMaskingConfiguration,
@@ -515,17 +515,17 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
             # Create an IpMaskingConfiguration object from the request body
             try:
                 query_params = {}
-                
+
                 # Required field: ip_masking (with alias ipMasking)
                 # Always provide a default value to ensure the required field is present
                 query_params["ip_masking"] = "DEFAULT"  # Default value
-                
+
                 if request_body:
                     if "ipMasking" in request_body:
                         query_params["ip_masking"] = request_body["ipMasking"]
                     elif "ip_masking" in request_body:
                         query_params["ip_masking"] = request_body["ip_masking"]
-                
+
                 logger.debug(f"Creating IpMaskingConfiguration with params: {query_params}")
                 config_object = IpMaskingConfiguration(**query_params)
                 logger.debug("Successfully created IpMaskingConfiguration object")
@@ -577,7 +577,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
             # Use the raw response method to get the actual CSV data
             try:
                 result = api_client.get_website_geo_mapping_rules(website_id=website_id)
-                
+
                 # If the high-level method returns None, try the raw response
                 if result is None:
                     response = api_client.get_website_geo_mapping_rules_without_preload_content(website_id=website_id)
@@ -588,7 +588,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
                         csv_data = str(response)
                 else:
                     csv_data = str(result)
-                    
+
             except Exception as api_error:
                 logger.warning(f"High-level API call failed: {api_error}, trying raw response")
                 # Fallback to raw HTTP response
@@ -600,12 +600,12 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
             # Handle CSV response format
             result_list: List[Dict[str, Any]] = []
-            
+
             if csv_data and ',' in csv_data:
                 # Parse CSV response
                 import csv
                 import io
-                
+
                 csv_reader = csv.DictReader(io.StringIO(csv_data))
                 for row in csv_reader:
                     result_list.append(dict(row))
@@ -621,8 +621,8 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def set_website_geo_mapping_rules(self, 
-                                            website_id: str, 
+    async def set_website_geo_mapping_rules(self,
+                                            website_id: str,
                                             body: Optional[str] = None,
                                             ctx=None, api_client=None) -> Dict[str, Any]:
         """
@@ -647,7 +647,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
             # Call the set_website_geo_mapping_rules method from the SDK
             # The API automatically sets content-type to text/csv
             result = api_client.set_website_geo_mapping_rules(
-                website_id=website_id, 
+                website_id=website_id,
                 body=body
             )
 
@@ -663,11 +663,11 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
         except Exception as e:
             logger.error(f"Error in set_website_geo_mapping_rules: {e}", exc_info=True)
             return {"error": f"Failed to set website geo mapping rules: {e!s}"}
-    
+
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def upload_source_map_file(self, 
-                                        website_id: str, 
+    async def upload_source_map_file(self,
+                                        website_id: str,
                                         source_map_config_id: str,
                                         file_format: Optional[str] = None,
                                         source_map: Optional[str] = None,
@@ -694,7 +694,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
                 return {"error": "website_id parameter is required"}
             if not source_map_config_id:
                 return {"error": "source_map_config_id parameter is required"}
-            
+
             logger.debug("upload_source_map_file called")
 
             # Call the upload_source_map_file method from the SDK
@@ -721,11 +721,11 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
         except Exception as e:
             logger.error(f"Error in upload_source_map_file: {e}")
             return {"error": f"Failed to upload source map file: {e!s}"}
-    
+
     @register_as_tool
     @with_header_auth(WebsiteConfigurationApi)
-    async def clear_source_map_upload_configuration(self, 
-                                                    website_id: str, 
+    async def clear_source_map_upload_configuration(self,
+                                                    website_id: str,
                                                     source_map_config_id: str,
                                                     ctx=None, api_client=None) -> Dict[str, Any]:
         """
@@ -751,7 +751,7 @@ class WebsiteConfigurationMCPTools(BaseInstanaClient):
 
             # Call the clear_source_map_upload_configuration method from the SDK
             result = api_client.clear_source_map_upload_configuration(
-                website_id=website_id, 
+                website_id=website_id,
                 source_map_config_id=source_map_config_id)
 
             # Convert the result to a dictionary

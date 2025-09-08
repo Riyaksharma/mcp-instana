@@ -29,7 +29,7 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
     def __init__(self, read_token: str, base_url: str):
         """Initialize the Website Metrics MCP tools client."""
         super().__init__(read_token=read_token, base_url=base_url)
-    
+
     @register_as_tool
     @with_header_auth(WebsiteMetricsApi)
     async def get_website_page_load(self,
@@ -79,7 +79,7 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
 
             logger.debug(f"Result from get_website_page_load: {result_list}")
             return result_list
-            
+
         except Exception as e:
             logger.error(f"Error in get_website_page_load: {e}", exc_info=True)
             return [{"error": f"Failed to get website page load: {e!s}"}]
@@ -137,8 +137,8 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
         """
         try:
             logger.debug("get_website_beacon_metrics_v2 called")
-        
-            # Parse the payload 
+
+            # Parse the payload
             if isinstance(payload, str):
                 logger.debug("Payload is a string, attempting to parse")
                 try:
@@ -173,7 +173,7 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
                 # If payload is already a dictionary, use it directly
                 logger.debug("Using provided payload dictionary")
                 request_body = payload
-                    
+
             try:
                 from instana_client.models.get_website_metrics_v2 import (
                     GetWebsiteMetricsV2,
@@ -186,7 +186,7 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
             # Create an GetWebsiteMetricsV2 object from the request body
             try:
                 query_params = {}
-                
+
                 # Extract required fields from request body
                 if request_body:
                     # Required field: metrics
@@ -194,24 +194,24 @@ class WebsiteMetricsMCPTools(BaseInstanaClient):
                         query_params["metrics"] = request_body["metrics"]
                     else:
                         return {"error": "Required field 'metrics' is missing from payload"}
-                    
+
                     # Required field: type
                     if "type" in request_body:
                         query_params["type"] = request_body["type"]
                     else:
                         return {"error": "Required field 'type' is missing from payload"}
-                    
+
                     # Optional fields
                     if "tagFilterExpression" in request_body:
                         query_params["tag_filter_expression"] = request_body["tagFilterExpression"]
                     elif "tag_filter_expression" in request_body:
                         query_params["tag_filter_expression"] = request_body["tag_filter_expression"]
-                    
+
                     if "timeFrame" in request_body:
                         query_params["time_frame"] = request_body["timeFrame"]
                     elif "time_frame" in request_body:
                         query_params["time_frame"] = request_body["time_frame"]
-                
+
                 logger.debug(f"Creating get_website_beacon_metrics_v2 with params: {query_params}")
                 config_object = GetWebsiteMetricsV2(**query_params)
                 logger.debug("Successfully created GetWebsiteMetricsV2 object")
