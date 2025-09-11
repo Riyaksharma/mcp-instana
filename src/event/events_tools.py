@@ -40,8 +40,16 @@ class AgentMonitoringEventsMCPTools(BaseInstanaClient):
         try:
             # Call the get_event method from the SDK
             result = api_client.get_event(event_id=event_id)
+            if hasattr(result, "to_dict"):
+                result_dict = result.to_dict()
+            elif isinstance(result, dict):
+                result_dict = result
+            else:
+                # Convert to dictionary using __dict__ or as a fallback, create a new dict with string representation
+                result_dict = getattr(result, "__dict__", {"data": str(result)})
 
-            return result
+            logger.debug("Successfully retrieved service topology data")
+            return result_dict
         except Exception as e:
             logger.error(f"Error in get_event: {e}", exc_info=True)
             return {"error": f"Failed to get event: {e!s}"}
