@@ -1,11 +1,12 @@
-# Multi-platform Dockerfile for creating platform-independent images
+# Multi-platform Linux Dockerfile
 #
-# This Dockerfile supports multiple platforms:
+# This Dockerfile supports multiple Linux platforms:
 # - Linux AMD64 (x86_64): Standard Intel/AMD processors on Linux
 # - Linux ARM64 (aarch64): Apple Silicon, AWS Graviton, Raspberry Pi 4
-# 
-# Note: Windows support has been removed as the python:3.11-slim image
-# is not available for Windows platforms
+# - Linux ARM/v7: Older ARM devices like Raspberry Pi 2/3
+# - Linux 386: 32-bit x86 systems
+# - Linux PPC64LE: PowerPC 64-bit Little Endian
+# - Linux s390x: IBM Z mainframes
 #
 # To create a multi-architecture image that works on any platform:
 #
