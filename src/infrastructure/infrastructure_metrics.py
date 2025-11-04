@@ -87,9 +87,6 @@ class InfrastructureMetricsMCPTools(BaseInstanaClient):
             if not plugin:
                 return {"error": "Plugin is required for this operation"}
 
-            if not query:
-                return {"error": "Query is required for this operation"}
-
 
             if not time_frame:
                 to_time = int(datetime.now().timestamp() * 1000)
