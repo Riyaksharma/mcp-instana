@@ -88,11 +88,11 @@ class InfrastructureCatalogMCPTools(BaseInstanaClient):
                     result_dict = {"data": str(result), "plugin_id": plugin_id}
 
                 logger.debug(f"Result from get_available_payload_keys_by_plugin_id: {result_dict}")
-                
+
                 # Safety check: ensure we never return a raw list
                 if isinstance(result_dict, list):
                     result_dict = {"payload_keys": result_dict, "plugin_id": plugin_id}
-                    
+
                 return result_dict
 
             except Exception as sdk_error:
@@ -117,7 +117,7 @@ class InfrastructureCatalogMCPTools(BaseInstanaClient):
                     import json
                     try:
                         parsed_result = json.loads(response_text)
-                        
+
                         # Ensure we always return a dictionary, not a raw list
                         if isinstance(parsed_result, list):
                             result_dict = {"payload_keys": parsed_result, "plugin_id": plugin_id}
@@ -125,7 +125,7 @@ class InfrastructureCatalogMCPTools(BaseInstanaClient):
                             result_dict = parsed_result
                         else:
                             result_dict = {"data": parsed_result, "plugin_id": plugin_id}
-                            
+
                         logger.debug(f"Result from fallback method (JSON): {result_dict}")
                         return result_dict
                     except json.JSONDecodeError:
@@ -414,7 +414,9 @@ class InfrastructureCatalogMCPTools(BaseInstanaClient):
                 # Check for Pydantic ValidationError (SDK model deserialization issues)
                 is_pydantic_error = False
                 try:
-                    from pydantic import ValidationError as _PydanticValidationError  # type: ignore
+                    from pydantic import (
+                        ValidationError as _PydanticValidationError,  # type: ignore
+                    )
                     is_pydantic_error = isinstance(sdk_error, _PydanticValidationError)
                 except Exception:
                     # Fallback to string inspection if pydantic not importable in runtime

@@ -158,7 +158,7 @@ class InfrastructureTopologyMCPTools(BaseInstanaClient):
                 # Use get_topology_without_preload_content to bypass validation
                 response = api_client.get_topology_without_preload_content(include_data=include_data)
                 logger.debug("SDK call successful using get_topology_without_preload_content")
-                
+
                 # Parse the JSON response manually following the pattern from application_topology.py
                 import json
                 try:
@@ -171,7 +171,7 @@ class InfrastructureTopologyMCPTools(BaseInstanaClient):
                     error_message = f"Failed to parse JSON response: {json_err}"
                     logger.error(error_message)
                     return {"error": error_message}
-                    
+
             except Exception as sdk_error:
                 logger.error(f"SDK error: {sdk_error}")
                 return {
