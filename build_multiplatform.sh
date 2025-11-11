@@ -6,7 +6,7 @@
 IMAGE_NAME="mcp-instana"
 IMAGE_TAG="latest"
 REGISTRY=""
-LINUX_PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le,linux/s390x"
+LINUX_PLATFORMS="linux/amd64,linux/arm64"
 PUSH=false
 
 # Display help
@@ -18,7 +18,7 @@ show_help() {
     echo "  -n, --name NAME       Image name (default: mcp-instana)"
     echo "  -t, --tag TAG         Image tag (default: latest)"
     echo "  -r, --registry REG    Registry prefix (e.g., 'username/' or 'registry.example.com/')"
-    echo "  -p, --platforms PLAT  Comma-separated list of platforms (default: linux/amd64,linux/arm64,linux/arm/v7,linux/386,linux/ppc64le,linux/s390x)"
+    echo "  -p, --platforms PLAT  Comma-separated list of platforms (default: linux/amd64,linux/arm64)"
     echo "  --push                Push the images to the registry"
     echo "  -h, --help            Show this help message"
     echo ""
@@ -66,16 +66,22 @@ done
 # Full image names with registry and tag
 FULL_IMAGE_NAME="${REGISTRY}${IMAGE_NAME}:${IMAGE_TAG}"
 
+# Set up QEMU for cross-compilation
+echo "Setting up QEMU for cross-compilation..."
+# Use a different approach to set up QEMU that works better on macOS
+docker run --privileged --rm tonistiigi/binfmt --install all
+
 # Set up Docker BuildKit builder
 echo "Setting up Docker BuildKit builder..."
 docker buildx create --name multiplatform --driver docker-container --use 2>/dev/null || true
+docker buildx inspect --bootstrap
 
 # Build Linux images
 echo "Building Linux images: $FULL_IMAGE_NAME"
 echo "Platforms: $LINUX_PLATFORMS"
 
-# Build command for Linux
-BUILD_CMD="docker buildx build --platform $LINUX_PLATFORMS -t $FULL_IMAGE_NAME -f Dockerfile"
+# Build command for Linux with additional options for better cross-compilation
+BUILD_CMD="docker buildx build --platform $LINUX_PLATFORMS -t $FULL_IMAGE_NAME -f Dockerfile --progress=plain --no-cache"
 
 # Add push flag if requested
 if [ "$PUSH" = true ]; then
@@ -110,6 +116,17 @@ fi
 
 if [ "$PUSH" = true ]; then
     echo "Multi-architecture image pushed as: $FULL_IMAGE_NAME"
+    
+    # Verify the manifest
+    echo "Verifying manifest..."
+    docker manifest inspect $FULL_IMAGE_NAME
+    
+    # Test pulling the image for different architectures
+    echo "Testing image pull for different architectures..."
+    docker pull --platform=linux/amd64 $FULL_IMAGE_NAME
+    docker pull --platform=linux/arm64 $FULL_IMAGE_NAME
+    
+    echo "Image successfully built and pushed for multiple architectures"
 else
     echo "Image was built locally but not pushed. Use --push to create multi-platform images."
 fi

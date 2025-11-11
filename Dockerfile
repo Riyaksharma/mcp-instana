@@ -3,10 +3,6 @@
 # This Dockerfile supports multiple Linux platforms:
 # - Linux AMD64 (x86_64): Standard Intel/AMD processors on Linux
 # - Linux ARM64 (aarch64): Apple Silicon, AWS Graviton, Raspberry Pi 4
-# - Linux ARM/v7: Older ARM devices like Raspberry Pi 2/3
-# - Linux 386: 32-bit x86 systems
-# - Linux PPC64LE: PowerPC 64-bit Little Endian
-# - Linux s390x: IBM Z mainframes
 #
 # To create a multi-architecture image that works on any platform:
 #
@@ -58,7 +54,7 @@
 # ```
 #
 # Stage 1: Build stage with minimal runtime dependencies
-FROM --platform=${BUILDPLATFORM:-linux/arm64} docker.io/library/python:3.11-slim AS builder
+FROM docker.io/library/python:3.11-slim AS builder
 
 # Install system dependencies needed for building
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -78,7 +74,7 @@ COPY README.md ./
 RUN pip install --no-cache-dir uv
 
 # Install only runtime dependencies using the minimal pyproject-runtime.toml
-RUN uv pip install --no-cache-dir --system .
+RUN pip install --no-cache-dir .
 
 # Stage 2: Runtime stage
 FROM python:3.11-slim AS runtime
