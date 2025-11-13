@@ -246,7 +246,29 @@ class ApplicationResourcesMCPTools(BaseInstanaClient):
             List of application names
         """
         try:
-            logger.debug(f"get_applications called with name_filter={name_filter}")
+            logger.info("=" * 80)
+            logger.info("🔍 GET_APPLICATIONS TOOL CALLED")
+            logger.info("=" * 80)
+            logger.info(f"📋 name_filter={name_filter}")
+            logger.info(f"🔧 api_client type: {type(api_client)}")
+            logger.info(f"🔧 api_client: {api_client}")
+            
+            # Try to get the configuration from the API client
+            if hasattr(api_client, 'api_client'):
+                inner_client = api_client.api_client
+                logger.info(f"🔧 Inner API client: {inner_client}")
+                if hasattr(inner_client, 'configuration'):
+                    config = inner_client.configuration
+                    logger.info(f"🔐 Configuration host: {config.host}")
+                    if hasattr(config, 'api_key'):
+                        logger.info(f"🔑 API keys configured: {list(config.api_key.keys())}")
+                        if 'ApiKeyAuth' in config.api_key:
+                            token = config.api_key['ApiKeyAuth']
+                            logger.info(f"🔑 JWT Token (first 50 chars): {token[:20]}...")
+                    if hasattr(config, 'default_headers'):
+                        logger.info(f"📨 Default headers: {config.default_headers}")
+            
+            logger.info("=" * 80)
 
             # Set default time range if not provided
             if not to_time:
@@ -256,6 +278,7 @@ class ApplicationResourcesMCPTools(BaseInstanaClient):
                 window_size = 60 * 60 * 1000  # Default to 1 hour
 
             # Call the get_applications method from the SDK
+            logger.info("📡 Calling api_client.get_applications...")
             result = api_client.get_applications(
                 name_filter=name_filter,
                 window_size=window_size,

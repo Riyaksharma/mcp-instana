@@ -89,6 +89,7 @@ class MCPState:
 # Global variables to store credentials for lifespan
 _global_token = None
 _global_base_url = None
+_global_auth_provider = None
 
 def get_instana_credentials():
     """Get Instana credentials from environment variables for stdio mode."""
@@ -180,6 +181,7 @@ async def lifespan(server: FastMCP) -> AsyncIterator[MCPState]:
 
 def create_app(jwt_token: str, base_url: str, port: int = int(os.getenv("PORT", "8080")), enabled_categories: str = "all") -> tuple[FastMCP, int]:
     """Create and configure the MCP server with the given credentials."""
+    global _global_auth_provider
     try:
         # Initialize OAuth provider if enabled
         auth_provider = None
@@ -194,12 +196,25 @@ def create_app(jwt_token: str, base_url: str, port: int = int(os.getenv("PORT", 
                 logger.info(msg="OAuth provider initialized successfully")
                 logger.info("Note: OAuth provider is available but FastMCP integration requires manual setup")
                 logger.info("See docs/OAUTH_SETUP.md for integration instructions")
+                
+                # Store the auth provider globally for access by tools
+                _global_auth_provider = auth_provider
+                
+                # Also register in the utils module's registry for access by decorators
+                from src.core.utils import with_header_auth
+                if not hasattr(with_header_auth, '_auth_provider_registry'):
+                    with_header_auth._auth_provider_registry = {}
+                with_header_auth._auth_provider_registry['default'] = auth_provider
             except Exception as e:
                 logger.warning(f"Failed to initialize OAuth provider: {e}")
                 logger.warning("Continuing without OAuth authentication")
                 auth_provider = None
         
         server = FastMCP(name="Instana MCP Server", host="localhost", port=port, auth=auth_provider)
+        
+        # Store the auth provider in the server for access by tools
+        if auth_provider:
+            server.auth_provider = auth_provider
         
         # Register the OAuth callback route if auth_provider is available
         if auth_provider:

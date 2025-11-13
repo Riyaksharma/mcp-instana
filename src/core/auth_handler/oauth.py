@@ -120,6 +120,9 @@ class SimpleOAuthProvider(OAuthProvider):
         # Store tokens with MCP tokens using the format:
         # {"mcp_token": "auth_token"}
         self.token_mapping: dict[str, str] = {}
+        # Store Instana JWT tokens extracted from OAuth response
+        # Maps MCP token to Instana JWT token
+        self.instana_jwt_mapping: dict[str, str] = {}
         self.issuer_url = settings.server_url
         self.service_documentation_url = settings.server_url
         self.resource_server_url = settings.server_url
@@ -239,6 +242,11 @@ class SimpleOAuthProvider(OAuthProvider):
                 raise ValueError("No valid authentication token found in response.")
 
             logger.info(f"✅ Access Token Received: {auth_token[:20]}...")
+            
+            # Extract Instana JWT token from the OAuth response
+            # The Instana JWT token is typically the id_token or access_token itself
+            instana_jwt_token = auth_token
+            logger.info(f"🔑 Extracted Instana JWT Token: {instana_jwt_token[:20]}...")
 
             # Create MCP authorization code
             new_code = f"mcp_{secrets.token_hex(16)}"
@@ -264,7 +272,9 @@ class SimpleOAuthProvider(OAuthProvider):
                 expires_at=None,
             )
             self.token_mapping[new_code] = auth_token
-            logger.info(f"🔗 Mapped MCP code to OAuth token")
+            # Store the Instana JWT token mapping
+            self.instana_jwt_mapping[new_code] = instana_jwt_token
+            logger.info(f"🔗 Mapped MCP code to OAuth token and Instana JWT")
 
         del self.state_mapping[state]
         logger.info("🧹 Cleaned up state mapping")
@@ -324,6 +334,14 @@ class SimpleOAuthProvider(OAuthProvider):
             logger.info(f"🔗 Mapped MCP token to OAuth token: {auth_token[:25]}...")
         else:
             logger.warning("⚠️  No OAuth token found for this client")
+        
+        # Transfer Instana JWT mapping from auth code to MCP token
+        if authorization_code.code in self.instana_jwt_mapping:
+            instana_jwt = self.instana_jwt_mapping[authorization_code.code]
+            self.instana_jwt_mapping[mcp_token] = instana_jwt
+            logger.info(f"🔑 Mapped MCP token to Instana JWT: {instana_jwt[:20]}...")
+            # Clean up the old mapping
+            del self.instana_jwt_mapping[authorization_code.code]
 
         del self.auth_codes[authorization_code.code]
         logger.info("🧹 Deleted used authorization code")
@@ -381,5 +399,19 @@ class SimpleOAuthProvider(OAuthProvider):
         """Revoke a token."""
         if token in self.tokens:
             del self.tokens[token]
+        # Also clean up Instana JWT mapping
+        if token in self.instana_jwt_mapping:
+            del self.instana_jwt_mapping[token]
+    
+    def get_instana_jwt_token(self, mcp_token: str) -> str | None:
+        """Get the Instana JWT token for a given MCP token.
+        
+        Args:
+            mcp_token: The MCP access token
+            
+        Returns:
+            The Instana JWT token if found, None otherwise
+        """
+        return self.instana_jwt_mapping.get(mcp_token)
 
 # Made with Bob

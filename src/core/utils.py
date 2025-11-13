@@ -93,28 +93,82 @@ def with_header_auth(api_class, allow_mock=True):
 
                     instana_jwt_token = headers.get("instana-jwt-token")
                     instana_base_url = headers.get("instana-base-url")
+                    
+                    # Try to get the MCP authorization token for OAuth flow
+                    mcp_auth_token = headers.get("authorization")
+                    if mcp_auth_token and mcp_auth_token.startswith("Bearer "):
+                        mcp_auth_token = mcp_auth_token[7:]  # Remove "Bearer " prefix
 
                     # Check if we're in HTTP mode (headers are present)
-                    if instana_jwt_token or instana_base_url:
-                        # HTTP mode detected - both headers must be present
+                    if instana_jwt_token or instana_base_url or mcp_auth_token:
+                        # If OAuth is enabled and we have an MCP token, try to get Instana JWT from OAuth provider
+                        if mcp_auth_token and not instana_jwt_token:
+                            try:
+                                import os
+                                oauth_enabled = os.getenv("ENABLE_OAUTH", "False").lower() == "true"
+                                print(f"🔍 OAuth enabled: {oauth_enabled}", file=sys.stderr)
+                                print(f"🔍 MCP token: {mcp_auth_token[:20]}...", file=sys.stderr)
+                                if oauth_enabled:
+                                    # Use a global registry to store the auth provider
+                                    # This is set by the server during initialization
+                                    try:
+                                        # Try to get from global registry
+                                        if not hasattr(with_header_auth, '_auth_provider_registry'):
+                                            with_header_auth._auth_provider_registry = {}
+                                        
+                                        auth_provider = with_header_auth._auth_provider_registry.get('default')
+                                        print(f"🔍 Auth provider from registry: {auth_provider}", file=sys.stderr)
+                                        
+                                        if auth_provider:
+                                            print(f"🔍 Auth provider type: {type(auth_provider)}", file=sys.stderr)
+                                            print(f"🔍 Has get_instana_jwt_token: {hasattr(auth_provider, 'get_instana_jwt_token')}", file=sys.stderr)
+                                            
+                                            if hasattr(auth_provider, 'get_instana_jwt_token'):
+                                                instana_jwt_token = auth_provider.get_instana_jwt_token(mcp_auth_token)
+                                                print(f"🔍 Retrieved JWT token: {instana_jwt_token[:20] if instana_jwt_token else 'None'}...", file=sys.stderr)
+                                                if instana_jwt_token:
+                                                    print(f"✅ Retrieved Instana JWT from OAuth provider: {instana_jwt_token[:20]}...", file=sys.stderr)
+                                                else:
+                                                    print("⚠️  No Instana JWT found for MCP token", file=sys.stderr)
+                                            else:
+                                                print("⚠️  get_instana_jwt_token method not found", file=sys.stderr)
+                                        else:
+                                            print("⚠️  Auth provider not found in registry", file=sys.stderr)
+                                    except Exception as inner_e:
+                                        print(f"⚠️  Error accessing auth provider: {inner_e}", file=sys.stderr)
+                                        import traceback
+                                        traceback.print_exc(file=sys.stderr)
+                            except Exception as e:
+                                print(f"⚠️  Error retrieving Instana JWT from OAuth: {e}", file=sys.stderr)
+                                import traceback
+                                traceback.print_exc(file=sys.stderr)
+                        
+                        # If base URL is not in headers, try to get it from environment variable
+                        if not instana_base_url:
+                            import os
+                            instana_base_url = os.getenv("INSTANA_BASE_URL")
+                            if instana_base_url:
+                                print(f"📍 Using INSTANA_BASE_URL from environment: {instana_base_url}", file=sys.stderr)
+                        
+                        # HTTP mode detected - both instana_base_url and instana_jwt_token must be present
                         if not instana_jwt_token or not instana_base_url:
                             missing = []
                             if not instana_jwt_token:
-                                missing.append("instana-jwt-token")
+                                missing.append("instana-jwt-token (or valid OAuth token)")
                             if not instana_base_url:
-                                missing.append("instana-base-url")
-                            error_msg = f"HTTP mode detected but missing required headers: {', '.join(missing)}"
-                            print(f" {error_msg}", file=sys.stderr)
+                                missing.append("instana-base-url (header or INSTANA_BASE_URL env var)")
+                            error_msg = f"HTTP mode detected but missing required configuration: {', '.join(missing)}"
+                            print(f"❌ {error_msg}", file=sys.stderr)
                             return {"error": error_msg}
 
                         # Validate URL format
                         if not instana_base_url.startswith("http://") and not instana_base_url.startswith("https://"):
                             error_msg = "Instana base URL must start with http:// or https://"
-                            print(f" {error_msg}", file=sys.stderr)
+                            print(f"❌ {error_msg}", file=sys.stderr)
                             return {"error": error_msg}
 
-                        print(" Using header-based authentication (HTTP mode)", file=sys.stderr)
-                        print(" instana_base_url: ", instana_base_url)
+                        print("✅ Using header-based authentication (HTTP mode)", file=sys.stderr)
+                        print(f"📍 instana_base_url: {instana_base_url}", file=sys.stderr)
 
                         # Import SDK components
                         from instana_client.api_client import ApiClient
@@ -136,9 +190,11 @@ def with_header_auth(api_class, allow_mock=True):
                             "Authorization": f"Bearer {instana_jwt_token}"
                         }
                         
-                        print(f"DEBUG: Base URL: {instana_base_url}", file=sys.stderr)
-                        print(f"DEBUG: Token length: {len(instana_jwt_token)}", file=sys.stderr)
-                        print(f"DEBUG: Token prefix: {instana_jwt_token[:20]}...", file=sys.stderr)
+                        print(f"🔐 DEBUG: Base URL: {instana_base_url}", file=sys.stderr)
+                        print(f"🔐 DEBUG: Token length: {len(instana_jwt_token)}", file=sys.stderr)
+                        # print(f"🔐 DEBUG: Token prefix: {instana_jwt_token[:20]}...", file=sys.stderr)
+                        # print(f"🔐 DEBUG: Token suffix: ...{instana_jwt_token[-20:]}", file=sys.stderr)
+                        print(f"🔐 DEBUG: Full token (for debugging): {instana_jwt_token}", file=sys.stderr)
 
                         api_client_instance = ApiClient(configuration=configuration)
                         api_instance = api_class(api_client=api_client_instance)
