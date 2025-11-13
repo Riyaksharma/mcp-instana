@@ -73,7 +73,7 @@ def check_environment():
 
     # Check for required environment variables for real API tests
     if os.environ.get("RUN_REAL_API_TESTS", "false").lower() == "true":
-        required_vars = ["INSTANA_API_TOKEN", "INSTANA_BASE_URL"]
+        required_vars = ["INSTANA_JWT_TOKEN", "INSTANA_BASE_URL"]
         missing_vars = [var for var in required_vars if not os.environ.get(var)]
 
         if missing_vars:

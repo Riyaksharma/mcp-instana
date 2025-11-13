@@ -72,7 +72,7 @@ class TestInstanaClientBaseE2E:
 
         headers = client.get_headers()
         assert headers["Authorization"] == (
-            f"apiToken {instana_credentials['api_token']}"
+            f"Bearer {instana_credentials['api_token']}"
         )
         assert headers["Content-Type"] == "application/json"
         assert headers["Accept"] == "application/json"
@@ -501,7 +501,7 @@ class TestInstanaClientBaseE2E:
             # Verify the error result
             assert "error" in result
             assert "Authentication failed" in result["error"]
-            assert "INSTANA_API_TOKEN is missing" in result["error"]
+            assert "INSTANA_JWT_TOKEN is missing" in result["error"]
 
             # Create another client with missing base_url
             client = TestClient(

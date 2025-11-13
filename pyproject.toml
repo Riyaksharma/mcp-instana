@@ -28,10 +28,14 @@ dependencies = [
     "instana_client==1.0.0",
     # HTTP client - imported in src/core/utils.py
     "requests==2.32.4",
+    # Async HTTP client - imported in src/core/auth_handler
+    "httpx>=0.27.0",
     # Environment loading - imported in src/core/server.py
     "python-dotenv==1.1.0",
     # Data validation - imported in src/infrastructure/infrastructure_metrics.py
-    "pydantic==2.11.7"
+    "pydantic==2.11.7",
+    # Starlette for HTTP exceptions - imported in src/core/auth_handler/oauth.py
+    "starlette>=0.37.0"
 ]
 
 # Development dependencies for testing, linting, and development

@@ -18,7 +18,7 @@ def instana_credentials() -> Dict[str, str]:
     """Provide Instana API credentials for tests."""
     return {
         "base_url": os.environ.get("INSTANA_BASE_URL", "https://test.instana.io"),
-        "api_token": os.environ.get("INSTANA_API_TOKEN", "test_token")
+        "api_token": os.environ.get("INSTANA_JWT_TOKEN", "test_token")
     }
 
 
@@ -113,7 +113,7 @@ def mock_base_client(instana_credentials):
 def should_run_real_api_tests():
     """Check if we should run tests against real Instana API."""
     return (
-        os.environ.get("INSTANA_API_TOKEN") and
+        os.environ.get("INSTANA_JWT_TOKEN") and
         os.environ.get("INSTANA_BASE_URL") and
         os.environ.get("RUN_REAL_API_TESTS", "false").lower() == "true"
     )

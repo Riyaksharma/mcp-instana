@@ -59,7 +59,7 @@ uv add pytest pytest-asyncio pytest-mock pytest-cov aiohttp
 ### For Real API Tests
 ```bash
 # Set environment variables
-export INSTANA_API_TOKEN="your_actual_token"
+export INSTANA_JWT_TOKEN="your_actual_token"
 export INSTANA_BASE_URL="https://your-instana-instance.instana.io"
 export RUN_REAL_API_TESTS="true"
 ```
@@ -152,7 +152,7 @@ TEST_RETRY_ATTEMPTS=3              # Retry attempts for flaky tests
 INSTANA_ENABLED_TOOLS=all          # Tools to enable for testing
 
 # Real API testing
-INSTANA_API_TOKEN=your_token       # Instana API token
+INSTANA_JWT_TOKEN=your_token       # Instana API token
 INSTANA_BASE_URL=your_url          # Instana base URL
 RUN_REAL_API_TESTS=true            # Enable real API tests
 ```
@@ -290,11 +290,11 @@ mock_client.method = AsyncMock(return_value=data)
 **4. Real API test failures**
 ```bash
 # Check credentials
-echo $INSTANA_API_TOKEN
+echo $INSTANA_JWT_TOKEN
 echo $INSTANA_BASE_URL
 
 # Test API connectivity
-curl -H "Authorization: apiToken $INSTANA_API_TOKEN" "$INSTANA_BASE_URL/api/instana/version"
+curl -H "Authorization: Bearer $INSTANA_JWT_TOKEN" "$INSTANA_BASE_URL/api/instana/version"
 ```
 
 **5. Slow test execution**
@@ -361,9 +361,9 @@ jobs:
           uv run -m pytest tests/e2e/ -m mocked --cov=src --cov-report=xml
       
       - name: Run real API tests (if credentials available)
-        if: secrets.INSTANA_API_TOKEN
+        if: secrets.INSTANA_JWT_TOKEN
         env:
-          INSTANA_API_TOKEN: ${{ secrets.INSTANA_API_TOKEN }}
+          INSTANA_JWT_TOKEN: ${{ secrets.INSTANA_JWT_TOKEN }}
           INSTANA_BASE_URL: ${{ secrets.INSTANA_BASE_URL }}
           RUN_REAL_API_TESTS: true
         run: |

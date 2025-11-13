@@ -198,10 +198,10 @@ When using **Streamable HTTP mode**, you must pass Instana credentials via HTTP 
 
 **Required Headers:**
 - `instana-base-url`: Your Instana instance URL
-- `instana-api-token`: Your Instana API token
+- `instana-jwt-token`: Your Instana JWT token
 
 **Authentication Flow:**
-1. HTTP headers (`instana-base-url`, `instana-api-token`) must be present in each request
+1. HTTP headers (`instana-base-url`, `instana-jwt-token`) must be present in each request
 2. Requests without these headers will fail
 
 This design ensures secure credential transmission where credentials are only sent via headers for each request, making it suitable for scenarios requiring different credentials or avoiding credential storage in environment variables.
@@ -295,7 +295,7 @@ uv run src/core/server.py --transport streamable-http --log-level DEBUG --tools 
 ```bash
 # Set environment variables first
 export INSTANA_BASE_URL="https://your-instana-instance.instana.io"
-export INSTANA_API_TOKEN="your_instana_api_token"
+export INSTANA_JWT_TOKEN="your_instana_jwt_token"
 
 # Start the server (stdio is the default if no transport specified)
 mcp-instana
@@ -309,7 +309,7 @@ mcp-instana --transport stdio
 ```bash
 # Set environment variables first
 export INSTANA_BASE_URL="https://your-instana-instance.instana.io"
-export INSTANA_API_TOKEN="your_instana_api_token"
+export INSTANA_JWT_TOKEN="your_instana_jwt_token"
 
 # Start the server (stdio is the default if no transport specified)
 uv run src/core/server.py
@@ -426,7 +426,7 @@ Configure Claude Desktop to pass Instana credentials via headers:
         "mcp-remote", "http://0.0.0.0:8080/mcp/",
         "--allow-http",
         "--header", "instana-base-url: https://your-instana-instance.instana.io",
-        "--header", "instana-api-token: your_instana_api_token"
+        "--header", "instana-jwt-token: your_instana_jwt_token"
       ]
     }
   }
@@ -461,7 +461,7 @@ get me all endpoints from Instana
       "args": ["--transport", "stdio"],
       "env": {
         "INSTANA_BASE_URL": "https://your-instana-instance.instana.io",
-        "INSTANA_API_TOKEN": "your_instana_api_token"
+        "INSTANA_JWT_TOKEN": "your_instana_jwt_token"
       }
     }
   }
@@ -485,7 +485,7 @@ get me all endpoints from Instana
       ],
       "env": {
         "INSTANA_BASE_URL": "https://your-instana-instance.instana.io",
-        "INSTANA_API_TOKEN": "your_instana_api_token"
+        "INSTANA_JWT_TOKEN": "your_instana_jwt_token"
       }
     }
   }
@@ -518,7 +518,7 @@ You can directly create or update `.vscode/mcp.json` with the following configur
         "mcp-remote", "http://0.0.0.0:8080/mcp/",
         "--allow-http",
         "--header", "instana-base-url: https://your-instana-instance.instana.io",
-        "--header", "instana-api-token: your_instana_api_token"
+        "--header", "instana-jwt-token: your_instana_jwt_token"
       ],
       "env": {
         "PATH": "/usr/local/bin:/bin:/usr/bin",
@@ -531,7 +531,7 @@ You can directly create or update `.vscode/mcp.json` with the following configur
 
 **Note:** Replace the following values with your actual configuration:
 - `instana-base-url`: Your Instana instance URL
-- `instana-api-token`: Your Instana API token
+- `instana-jwt-token`: Your Instana JWT token
 - `command`: Update the npx path to match your system's Node.js installation (e.g., `/path/to/your/node/bin/npx`)
 - Environment variables: Adjust PATH and other environment variables as needed for your system
 
@@ -552,7 +552,7 @@ Create `.vscode/mcp.json` in your project root:
       "args": ["--transport", "stdio"],
       "env": {
         "INSTANA_BASE_URL": "https://your-instana-instance.instana.io",
-        "INSTANA_API_TOKEN": "your_instana_api_token"
+        "INSTANA_JWT_TOKEN": "your_instana_jwt_token"
       }
     }
   }
@@ -576,7 +576,7 @@ Create `.vscode/mcp.json` in your project root:
       ],
       "env": {
         "INSTANA_BASE_URL": "https://your-instana-instance.instana.io",
-        "INSTANA_API_TOKEN": "your_instana_api_token"
+        "INSTANA_JWT_TOKEN": "your_instana_jwt_token"
       }
     }
   }
@@ -589,7 +589,7 @@ Create `.vscode/mcp.json` in your project root:
   - `command`: Update the uv path to match your system's uv installation (e.g., `/path/to/your/uv/bin/uv` or `/usr/local/bin/uv`)
   - `--directory`: Update with the absolute path to your mcp-instana project directory
 - `INSTANA_BASE_URL`: Your Instana instance URL
-- `INSTANA_API_TOKEN`: Your Instana API token
+- `INSTANA_JWT_TOKEN`: Your Instana JWT token
 
 **Step 2: Manage Server in VS Code**
 
@@ -1023,13 +1023,13 @@ docker build -t mcp-instana:v1.0.0 .
 ```bash
 # Run with environment variables (recommended)
 docker run -p 8080:8080 \
-  -e INSTANA_API_TOKEN=your_instana_token \
+  -e INSTANA_JWT_TOKEN=your_instana_token \
   -e INSTANA_BASE_URL=https://your-instana-instance.instana.io \
   mcp-instana
 
 # Run with custom port
 docker run -p 8081:8080 \
-  -e INSTANA_API_TOKEN=your_instana_token \
+  -e INSTANA_JWT_TOKEN=your_instana_token \
   -e INSTANA_BASE_URL=https://your-instana-instance.instana.io \
   mcp-instana
 ```
@@ -1039,7 +1039,7 @@ The container requires the following environment variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `INSTANA_API_TOKEN` | Your Instana API token | `your_instana_token` |
+| `INSTANA_JWT_TOKEN` | Your Instana JWT token | `your_instana_token` |
 | `INSTANA_BASE_URL` | Your Instana instance URL | `https://your-instana-instance.instana.io` |
 | `PORT` | Server port (optional, defaults to 8080) | `8080` |
 
@@ -1052,7 +1052,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - INSTANA_API_TOKEN=${INSTANA_API_TOKEN}
+      - INSTANA_JWT_TOKEN=${INSTANA_JWT_TOKEN}
       - INSTANA_BASE_URL=${INSTANA_BASE_URL}
     restart: unless-stopped
     healthcheck:
@@ -1139,7 +1139,7 @@ spec:
         ports:
         - containerPort: 8080
         env:
-        - name: INSTANA_API_TOKEN
+        - name: INSTANA_JWT_TOKEN
           valueFrom:
             secretKeyRef:
               name: instana-secrets

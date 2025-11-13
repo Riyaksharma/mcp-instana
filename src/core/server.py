@@ -60,6 +60,9 @@ except ImportError:
 
 from fastmcp import FastMCP
 
+# Global flag to check if OAuth is enabled
+_oauth_enabled = os.getenv("ENABLE_OAUTH", "False").lower() == "true"
+
 
 @dataclass
 class MCPState:
@@ -89,18 +92,18 @@ _global_base_url = None
 
 def get_instana_credentials():
     """Get Instana credentials from environment variables for stdio mode."""
-    # For stdio mode, use INSTANA_API_TOKEN and INSTANA_BASE_URL
-    token = (os.getenv("INSTANA_API_TOKEN") or "")
+    # For stdio mode, use INSTANA_JWT_TOKEN and INSTANA_BASE_URL
     base_url = (os.getenv("INSTANA_BASE_URL") or "")
+    jwt_token = (os.getenv("INSTANA_JWT_TOKEN") or "")
 
-    return token, base_url
+    return jwt_token, base_url
 
-def validate_credentials(token: str, base_url: str) -> bool:
+def validate_credentials(jwt_token: str, base_url: str) -> bool:
     """Validate that Instana credentials are provided for stdio mode."""
-    # For stdio mode, validate INSTANA_API_TOKEN and INSTANA_BASE_URL
-    return not (not token or not base_url)
+    # For stdio mode, validate INSTANA_JWT_TOKEN
+    return not (not jwt_token or not base_url)
 
-def create_clients(token: str, base_url: str, enabled_categories: str = "all") -> MCPState:
+def create_clients(jwt_token: str, base_url: str, enabled_categories: str = "all") -> MCPState:
     """Create only the enabled Instana clients"""
     state = MCPState()
 
@@ -109,7 +112,7 @@ def create_clients(token: str, base_url: str, enabled_categories: str = "all") -
 
     for attr_name, client_class in enabled_client_configs:
         try:
-            client = client_class(read_token=token, base_url=base_url)
+            client = client_class(read_token=jwt_token, base_url=base_url)
             setattr(state, attr_name, client)
         except Exception as e:
             logger.error(f"Failed to create {attr_name}: {e}", exc_info=True)
@@ -117,16 +120,15 @@ def create_clients(token: str, base_url: str, enabled_categories: str = "all") -
 
     return state
 
-
 @asynccontextmanager
 async def lifespan(server: FastMCP) -> AsyncIterator[MCPState]:
     """Set up and tear down the Instana clients."""
     # Get credentials from environment variables
-    token, base_url = get_instana_credentials()
+    jwt_token, base_url = get_instana_credentials()
 
     try:
         # For lifespan, we'll create all clients since we don't have access to command line args here
-        state = create_clients(token, base_url, "all")
+        state = create_clients(jwt_token, base_url, "all")
 
         yield state
     except Exception:
@@ -135,13 +137,88 @@ async def lifespan(server: FastMCP) -> AsyncIterator[MCPState]:
         # Yield empty state if client creation failed
         yield MCPState()
 
-def create_app(token: str, base_url: str, port: int = int(os.getenv("PORT", "8080")), enabled_categories: str = "all") -> tuple[FastMCP, int]:
+
+# def validate_credentials(token: str, base_url: str) -> bool:
+#     """Validate that Instana credentials are provided for stdio mode."""
+#     # For stdio mode, validate INSTANA_API_TOKEN and INSTANA_BASE_URL
+#     return not (not token or not base_url)
+
+# def create_clients(token: str, base_url: str, enabled_categories: str = "all") -> MCPState:
+#     """Create only the enabled Instana clients"""
+#     state = MCPState()
+
+#     # Get enabled client configurations
+#     enabled_client_configs = get_enabled_client_configs(enabled_categories)
+
+#     for attr_name, client_class in enabled_client_configs:
+#         try:
+#             client = client_class(read_token=token, base_url=base_url)
+#             setattr(state, attr_name, client)
+#         except Exception as e:
+#             logger.error(f"Failed to create {attr_name}: {e}", exc_info=True)
+#             setattr(state, attr_name, None)
+
+#     return state
+
+
+# @asynccontextmanager
+# async def lifespan(server: FastMCP) -> AsyncIterator[MCPState]:
+#     """Set up and tear down the Instana clients."""
+#     # Get credentials from environment variables
+#     token, base_url = get_instana_credentials()
+
+#     try:
+#         # For lifespan, we'll create all clients since we don't have access to command line args here
+#         state = create_clients(token, base_url, "all")
+
+#         yield state
+#     except Exception:
+#         logger.error("Error during lifespan", exc_info=True)
+
+#         # Yield empty state if client creation failed
+#         yield MCPState()
+
+def create_app(jwt_token: str, base_url: str, port: int = int(os.getenv("PORT", "8080")), enabled_categories: str = "all") -> tuple[FastMCP, int]:
     """Create and configure the MCP server with the given credentials."""
     try:
-        server = FastMCP(name="Instana MCP Server", host="0.0.0.0", port=port)
+        # Initialize OAuth provider if enabled
+        auth_provider = None
+        if _oauth_enabled:
+            try:
+                from src.core.auth_handler.oauth import ServerSettings, SimpleOAuthProvider
+                logger.info("OAuth is enabled, initializing OAuth provider...")
+                oauth_settings = ServerSettings()
+                auth_provider = SimpleOAuthProvider(oauth_settings)
+                gw = FastMCP("instana", auth=auth_provider)
+
+                logger.info(msg="OAuth provider initialized successfully")
+                logger.info("Note: OAuth provider is available but FastMCP integration requires manual setup")
+                logger.info("See docs/OAUTH_SETUP.md for integration instructions")
+            except Exception as e:
+                logger.warning(f"Failed to initialize OAuth provider: {e}")
+                logger.warning("Continuing without OAuth authentication")
+                auth_provider = None
+        
+        server = FastMCP(name="Instana MCP Server", host="localhost", port=port, auth=auth_provider)
+        
+        # Register the OAuth callback route if auth_provider is available
+        if auth_provider:
+            from starlette.requests import Request
+            from starlette.responses import RedirectResponse
+            
+            @server.custom_route("/auth/callback", methods=["GET"])
+            async def oauth_callback(request: Request):
+                """OAuth callback endpoint."""
+                code = request.query_params.get("code")
+                state = request.query_params.get("state")
+                if not code or not state:
+                    from starlette.responses import JSONResponse
+                    return JSONResponse({"error": "Missing code or state parameter"}, status_code=400)
+                redirect_uri = await auth_provider.handle_callback(code, state)
+                return RedirectResponse(url=redirect_uri)
 
         # Only create and register enabled clients/tools
-        clients_state = create_clients(token, base_url, enabled_categories)
+        clients_state = create_clients(jwt_token=jwt_token, base_url=base_url, enabled_categories=enabled_categories)
 
         tools_registered = 0
         for tool_name, _tool_func in MCP_TOOLS.items():
@@ -537,19 +614,23 @@ def main():
             )
 
         # Get credentials from environment variables for stdio mode
-        INSTANA_API_TOKEN, INSTANA_BASE_URL = get_instana_credentials()
-
+        INSTANA_JWT_TOKEN, INSTANA_BASE_URL = get_instana_credentials()
         if args.transport == "stdio" or args.transport is None:
-            if not validate_credentials(INSTANA_API_TOKEN, INSTANA_BASE_URL):
-                logger.error("Error: Instana credentials are required for stdio mode but not provided. Please set INSTANA_API_TOKEN and INSTANA_BASE_URL environment variables.")
+            if not validate_credentials(INSTANA_JWT_TOKEN, INSTANA_BASE_URL):
+                logger.error("Error: Instana credentials are required for stdio mode but not provided. Please set INSTANA_JWT_TOKEN and INSTANA_BASE_URL environment variables.")
                 sys.exit(1)
+
+        # if args.transport == "stdio" or args.transport is None:
+        #     if not validate_credentials(INSTANA_API_TOKEN, INSTANA_BASE_URL):
+        #         logger.error("Error: Instana credentials are required for stdio mode but not provided. Please set INSTANA_API_TOKEN and INSTANA_BASE_URL environment variables.")
+        #         sys.exit(1)
 
         # Create and configure the MCP server
         try:
             enabled_categories = ",".join(enabled)
             # Ensure create_app is always called, even if credentials are missing
             # This is needed for test_main_function_missing_token
-            app, registered_tool_count = create_app(INSTANA_API_TOKEN, INSTANA_BASE_URL, args.port, enabled_categories)
+            app, registered_tool_count = create_app(jwt_token=INSTANA_JWT_TOKEN, base_url=INSTANA_BASE_URL, port=args.port, enabled_categories=enabled_categories)
         except Exception as e:
             print(f"Failed to create MCP server: {e}", file=sys.stderr)
             sys.exit(1)

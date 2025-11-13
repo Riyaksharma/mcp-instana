@@ -110,7 +110,7 @@ Before running tests, set up your environment:
 
 1. **Set required environment variables** (if not already set in your environment):
    ```bash
-   export INSTANA_API_TOKEN="your_api_token"
+   export INSTANA_JWT_TOKEN="your_api_token"
    export INSTANA_BASE_URL="https://your-instana-instance.io"
    export INSTANA_ENABLED_TOOLS="all"  # or specific tools like "events,infra"
    ```
@@ -228,7 +228,7 @@ The test runners (`run_all_tests.py` and `run_all_tests_with_coverage.py`) suppo
 
 The tests use the following environment variables:
 
-- `INSTANA_API_TOKEN`: API token for Instana
+- `INSTANA_JWT_TOKEN`: API token for Instana
 - `INSTANA_BASE_URL`: Base URL for the Instana API
 - `INSTANA_ENABLED_TOOLS`: Comma-separated list of enabled tool categories (e.g., "events,infra") or "all"
 

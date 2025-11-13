@@ -144,7 +144,7 @@ class TestMCPServerIntegrationE2E:
     async def test_create_clients_all_categories(self, instana_credentials):
         """Test create_clients with all categories enabled."""
         result = create_clients(
-            token=instana_credentials["api_token"],
+            jwt_token=instana_credentials["api_token"],
             base_url=instana_credentials["base_url"],
             enabled_categories="all"
         )
@@ -168,7 +168,7 @@ class TestMCPServerIntegrationE2E:
     async def test_create_clients_specific_categories(self, instana_credentials):
         """Test create_clients with specific categories enabled."""
         result = create_clients(
-            token=instana_credentials["api_token"],
+            jwt_token=instana_credentials["api_token"],
             base_url=instana_credentials["base_url"],
             enabled_categories="app,infra"
         )
@@ -184,7 +184,7 @@ class TestMCPServerIntegrationE2E:
     async def test_create_clients_invalid_category(self, instana_credentials):
         """Test create_clients with invalid category."""
         result = create_clients(
-            token=instana_credentials["api_token"],
+            jwt_token=instana_credentials["api_token"],
             base_url=instana_credentials["base_url"],
             enabled_categories="invalid_category"
         )
@@ -201,7 +201,7 @@ class TestMCPServerIntegrationE2E:
         # Mock the specific client class to raise an exception
         with patch('src.application.application_resources.ApplicationResourcesMCPTools.__init__', side_effect=Exception("Client creation failed")):
             result = create_clients(
-                token=instana_credentials["api_token"],
+                jwt_token=instana_credentials["api_token"],
                 base_url=instana_credentials["base_url"],
                 enabled_categories="app"
             )
@@ -788,7 +788,7 @@ class TestMCPServerIntegrationE2E:
 
             # Set environment variables
             with patch.dict(os.environ, {
-                'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                 'INSTANA_BASE_URL': instana_credentials["base_url"],
                 'INSTANA_ENABLED_TOOLS': 'app,infra'
             }):
@@ -868,7 +868,7 @@ class TestMCPServerIntegrationE2E:
 
                     # Set environment variables
                     with patch.dict(os.environ, {
-                        'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                        'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }):
                         # This should not raise an exception
@@ -926,7 +926,7 @@ class TestMCPServerIntegrationE2E:
                     mock_server.run = MagicMock()
 
                     with patch.dict(os.environ, {
-                        'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                        'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }):
                         with suppress(SystemExit):
@@ -966,7 +966,7 @@ class TestMCPServerIntegrationE2E:
                     mock_server.run = MagicMock()
 
                     with patch.dict(os.environ, {
-                        'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                        'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }):
                         with suppress(SystemExit):
@@ -988,7 +988,7 @@ class TestMCPServerIntegrationE2E:
                     mock_fastmcp.return_value = mock_server
                     mock_server.run = MagicMock()
 
-                    # Don't set INSTANA_API_TOKEN
+                    # Don't set INSTANA_JWT_TOKEN
                     with patch.dict(os.environ, {
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }, clear=True):
@@ -1019,7 +1019,7 @@ class TestMCPServerIntegrationE2E:
                     mock_server.run.side_effect = Exception("Server failed to start")
 
                     with patch.dict(os.environ, {
-                        'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                        'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }):
                         with patch('builtins.print'):
@@ -1049,7 +1049,7 @@ class TestMCPServerIntegrationE2E:
                     mock_server.run.side_effect = KeyboardInterrupt()
 
                     with patch.dict(os.environ, {
-                        'INSTANA_API_TOKEN': instana_credentials["api_token"],
+                        'INSTANA_JWT_TOKEN': instana_credentials["api_token"],
                         'INSTANA_BASE_URL': instana_credentials["base_url"]
                     }):
                         with patch('builtins.print'):

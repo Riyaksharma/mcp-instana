@@ -91,16 +91,16 @@ def with_header_auth(api_class, allow_mock=True):
                     from fastmcp.server.dependencies import get_http_headers
                     headers = get_http_headers()
 
-                    instana_token = headers.get("instana-api-token")
+                    instana_jwt_token = headers.get("instana-jwt-token")
                     instana_base_url = headers.get("instana-base-url")
 
                     # Check if we're in HTTP mode (headers are present)
-                    if instana_token or instana_base_url:
+                    if instana_jwt_token or instana_base_url:
                         # HTTP mode detected - both headers must be present
-                        if not instana_token or not instana_base_url:
+                        if not instana_jwt_token or not instana_base_url:
                             missing = []
-                            if not instana_token:
-                                missing.append("instana-api-token")
+                            if not instana_jwt_token:
+                                missing.append("instana-jwt-token")
                             if not instana_base_url:
                                 missing.append("instana-base-url")
                             error_msg = f"HTTP mode detected but missing required headers: {', '.join(missing)}"
@@ -123,9 +123,22 @@ def with_header_auth(api_class, allow_mock=True):
                         # Create API client from headers
                         configuration = Configuration()
                         configuration.host = instana_base_url
-                        configuration.api_key['ApiKeyAuth'] = instana_token
-                        configuration.api_key_prefix['ApiKeyAuth'] = 'apiToken'
-                        configuration.default_headers = {"User-Agent": "MCP-server/0.1.0"}
+                        # Ensure api_key and api_key_prefix are initialized
+                        if not hasattr(configuration, 'api_key') or configuration.api_key is None:
+                            configuration.api_key = {}
+                        if not hasattr(configuration, 'api_key_prefix') or configuration.api_key_prefix is None:
+                            configuration.api_key_prefix = {}
+                        configuration.api_key['ApiKeyAuth'] = instana_jwt_token
+                        configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+                        # Also set Authorization header directly to ensure it's sent
+                        configuration.default_headers = {
+                            "User-Agent": "MCP-server/0.1.0",
+                            "Authorization": f"Bearer {instana_jwt_token}"
+                        }
+                        
+                        print(f"DEBUG: Base URL: {instana_base_url}", file=sys.stderr)
+                        print(f"DEBUG: Token length: {len(instana_jwt_token)}", file=sys.stderr)
+                        print(f"DEBUG: Token prefix: {instana_jwt_token[:20]}...", file=sys.stderr)
 
                         api_client_instance = ApiClient(configuration=configuration)
                         api_instance = api_class(api_client=api_client_instance)
@@ -147,7 +160,7 @@ def with_header_auth(api_class, allow_mock=True):
                 if not self.read_token or not self.base_url:
                     error_msg = "Authentication failed: Missing credentials "
                     if not self.read_token:
-                        error_msg += " - INSTANA_API_TOKEN is missing"
+                        error_msg += " - INSTANA_JWT_TOKEN is missing"
                     if not self.base_url:
                         error_msg += " - INSTANA_BASE_URL is missing"
                     print(f" {error_msg}", file=sys.stderr)
@@ -176,9 +189,22 @@ def with_header_auth(api_class, allow_mock=True):
 
                     configuration = Configuration()
                     configuration.host = self.base_url
+                    # Ensure api_key and api_key_prefix are initialized
+                    if not hasattr(configuration, 'api_key') or configuration.api_key is None:
+                        configuration.api_key = {}
+                    if not hasattr(configuration, 'api_key_prefix') or configuration.api_key_prefix is None:
+                        configuration.api_key_prefix = {}
                     configuration.api_key['ApiKeyAuth'] = self.read_token
-                    configuration.api_key_prefix['ApiKeyAuth'] = 'apiToken'
-                    configuration.default_headers = {"User-Agent": "MCP-server/0.1.0"}
+                    configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
+                    # Also set Authorization header directly to ensure it's sent
+                    configuration.default_headers = {
+                        "User-Agent": "MCP-server/0.1.0",
+                        "Authorization": f"Bearer {self.read_token}"
+                    }
+                    
+                    print(f"DEBUG: Base URL: {self.base_url}", file=sys.stderr)
+                    print(f"DEBUG: Token length: {len(self.read_token)}", file=sys.stderr)
+                    print(f"DEBUG: Token prefix: {self.read_token[:20]}...", file=sys.stderr)
 
                     api_client_instance = ApiClient(configuration=configuration)
                     api_instance = api_class(api_client=api_client_instance)
@@ -200,6 +226,40 @@ def with_header_auth(api_class, allow_mock=True):
         return wrapper
     return decorator
 
+# OAuth Configuration Keys
+class ConfigKey:
+    """Configuration keys for OAuth and authentication."""
+    # OAuth keys
+    CLIENT_ID: str = "client_id"
+    CLIENT_SECRET: str = "client_secret"
+    TOKEN_URL: str = "token_url"
+    SCOPE: str = "scope"
+    REFRESH_TOKEN: str = "refresh_token"
+    
+    # Dynamic token keys
+    ID: str = "id"
+    SECRET: str = "secret"
+    API_KEY: str = "apikey"
+    TOKEN_GEN_AUTH_METHOD: str = "token_gen_auth_method"
+    TOKEN_GEN_METHOD: str = "token_gen_method"
+    
+    # JSESSIONID keys
+    JSESSIONID: str = "JSESSIONID"
+    USERNAME: str = "username"
+    PASSWORD: str = "password"
+    LOGIN_URL: str = "login_url"
+    AUTH_STRATEGY: str = "auth_strategy"
+
+
+# Authentication Strategies
+class AuthStrategy:
+    """Authentication strategy constants."""
+    BASIC: str = "basic"
+    JWT: str = "jwt"
+    JSESSIONID: str = "jsessionid"
+    OAUTH: str = "oauth"
+
+
 class BaseInstanaClient:
     """Base client for Instana API with common functionality."""
 
@@ -210,7 +270,7 @@ class BaseInstanaClient:
     def get_headers(self):
         """Get standard headers for Instana API requests."""
         return {
-            "Authorization": f"apiToken {self.read_token}",
+            "Authorization": f"Bearer {self.read_token}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
@@ -248,3 +308,4 @@ class BaseInstanaClient:
         except Exception as e:
             print(f"Unexpected error: {e!s}", file=sys.stderr)
             return {"error": f"Unexpected error: {e!s}"}
+

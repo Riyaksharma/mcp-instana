@@ -117,7 +117,7 @@ class TestBaseInstanaClient(unittest.TestCase):
         """Test that get_headers returns the correct headers"""
         headers = self.client.get_headers()
 
-        self.assertEqual(headers["Authorization"], f"apiToken {self.read_token}")
+        self.assertEqual(headers["Authorization"], f"Bearer {self.read_token}")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(headers["Accept"], "application/json")
 
@@ -716,7 +716,7 @@ class TestBaseInstanaClient(unittest.TestCase):
         client = BaseInstanaClient(read_token=special_token, base_url=self.base_url)
         headers = client.get_headers()
 
-        self.assertEqual(headers["Authorization"], f"apiToken {special_token}")
+        self.assertEqual(headers["Authorization"], f"Bearer {special_token}")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(headers["Accept"], "application/json")
 
@@ -726,7 +726,7 @@ class TestBaseInstanaClient(unittest.TestCase):
         client = BaseInstanaClient(read_token=unicode_token, base_url=self.base_url)
         headers = client.get_headers()
 
-        self.assertEqual(headers["Authorization"], f"apiToken {unicode_token}")
+        self.assertEqual(headers["Authorization"], f"Bearer {unicode_token}")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(headers["Accept"], "application/json")
 
@@ -736,7 +736,7 @@ class TestBaseInstanaClient(unittest.TestCase):
         client = BaseInstanaClient(read_token=empty_token, base_url=self.base_url)
         headers = client.get_headers()
 
-        self.assertEqual(headers["Authorization"], "apiToken ")
+        self.assertEqual(headers["Authorization"], "Bearer ")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(headers["Accept"], "application/json")
 
@@ -746,7 +746,7 @@ class TestBaseInstanaClient(unittest.TestCase):
         client = BaseInstanaClient(read_token=whitespace_token, base_url=self.base_url)
         headers = client.get_headers()
 
-        self.assertEqual(headers["Authorization"], f"apiToken {whitespace_token}")
+        self.assertEqual(headers["Authorization"], f"Bearer {whitespace_token}")
         self.assertEqual(headers["Content-Type"], "application/json")
         self.assertEqual(headers["Accept"], "application/json")
 

@@ -41,7 +41,7 @@ class LogAlertConfigurationMCPTools(BaseInstanaClient):
             configuration = Configuration()
             configuration.host = base_url
             configuration.api_key['ApiKeyAuth'] = read_token
-            configuration.api_key_prefix['ApiKeyAuth'] = 'apiToken'
+            configuration.api_key_prefix['ApiKeyAuth'] = 'Bearer'
 
             # Create an API client with this configuration
             api_client = ApiClient(configuration=configuration)

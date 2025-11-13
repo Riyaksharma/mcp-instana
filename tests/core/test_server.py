@@ -74,7 +74,7 @@ class TestMCPServer(unittest.TestCase):
 
     def setUp(self):
         self.original_env = os.environ.copy()
-        os.environ["INSTANA_API_TOKEN"] = "test_token"
+        os.environ["INSTANA_JWT_TOKEN"] = "test_token"
         os.environ["INSTANA_BASE_URL"] = "https://test.instana.io"
         os.environ["INSTANA_ENABLED_TOOLS"] = "all"
 
@@ -263,8 +263,8 @@ class TestMCPServer(unittest.TestCase):
     @patch('src.core.server.sys.argv', ['mcp_server.py'])
     @patch('src.core.server.os.getenv')
     def test_main_function_missing_token(self, mock_getenv, mock_create_app, mock_arg_parser):
-        # Set up getenv to return None for INSTANA_API_TOKEN and handle PORT correctly
-        mock_getenv.side_effect = lambda key, default=None: default if key == "INSTANA_API_TOKEN" else (default if key == "PORT" else "value")
+        # Set up getenv to return None for INSTANA_JWT_TOKEN and handle PORT correctly
+        mock_getenv.side_effect = lambda key, default=None: default if key == "INSTANA_JWT_TOKEN" else (default if key == "PORT" else "value")
 
         # Set up the mock app
         mock_app = MagicMock()
@@ -468,7 +468,7 @@ class TestMCPServerAsync(unittest.TestCase):
 
     def setUp(self):
         self.original_env = os.environ.copy()
-        os.environ["INSTANA_API_TOKEN"] = "test_token"
+        os.environ["INSTANA_JWT_TOKEN"] = "test_token"
         os.environ["INSTANA_BASE_URL"] = "https://test.instana.io"
         os.environ["INSTANA_ENABLED_TOOLS"] = "all"
 

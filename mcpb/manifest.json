@@ -29,7 +29,7 @@
       "env": {
         "PYTHONPATH": "${__dirname}/lib",
         "INSTANA_BASE_URL": "${user_config.instana_base_url}",
-        "INSTANA_API_TOKEN": "${user_config.instana_api_token}"
+        "INSTANA_JWT_TOKEN": "${user_config.instana_jwt_token}"
       }
     }
   },
@@ -41,7 +41,7 @@
       "default": "https://your-instana-url",
       "required": true
     },
-    "instana_api_token": {
+    "instana_jwt_token": {
       "type": "string",
       "title": "Instana API Token",
       "description": "Your Instana API token",
