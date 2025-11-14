@@ -71,6 +71,10 @@ echo "Setting up QEMU for cross-compilation..."
 # Use a different approach to set up QEMU that works better on macOS
 docker run --privileged --rm tonistiigi/binfmt --install all
 
+# Disable default attestations
+echo "Disabling default attestations..."
+export BUILDX_NO_DEFAULT_ATTESTATIONS=1
+
 # Set up Docker BuildKit builder
 echo "Setting up Docker BuildKit builder..."
 docker buildx create --name multiplatform --driver docker-container --use 2>/dev/null || true
@@ -81,7 +85,7 @@ echo "Building Linux images: $FULL_IMAGE_NAME"
 echo "Platforms: $LINUX_PLATFORMS"
 
 # Build command for Linux with additional options for better cross-compilation
-BUILD_CMD="docker buildx build --platform $LINUX_PLATFORMS -t $FULL_IMAGE_NAME -f Dockerfile --progress=plain --no-cache"
+BUILD_CMD="docker buildx build --platform $LINUX_PLATFORMS -t $FULL_IMAGE_NAME -f Dockerfile --progress=plain --no-cache --provenance=false --sbom=false"
 
 # Add push flag if requested
 if [ "$PUSH" = true ]; then
@@ -93,7 +97,7 @@ else
     # Get current platform
     CURRENT_PLATFORM=$(docker version -f '{{.Server.Os}}/{{.Server.Arch}}' | tr '[:upper:]' '[:lower:]')
     if [[ $CURRENT_PLATFORM == linux/* ]]; then
-        BUILD_CMD="docker buildx build --platform $CURRENT_PLATFORM -t $FULL_IMAGE_NAME -f Dockerfile --load"
+        BUILD_CMD="docker buildx build --platform $CURRENT_PLATFORM -t $FULL_IMAGE_NAME -f Dockerfile --load --provenance=false --sbom=false"
     else
         echo "Current platform is not Linux. Skipping local build."
         BUILD_CMD=""

@@ -1,7 +1,6 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 <!-- mcp-name: io.github.instana/mcp-instana -->
-**Table of Contents**
 
 - [MCP Server for IBM Instana](#mcp-server-for-ibm-instana)
   - [Architecture Overview](#architecture-overview)
@@ -48,23 +47,8 @@
       - [**pyproject.toml** (Development)](#pyprojecttoml-development)
       - [**pyproject-runtime.toml** (Production)](#pyproject-runtimetoml-production)
     - [Building the Docker Image](#building-the-docker-image)
-      - [**Prerequisites**](#prerequisites-1)
+      - [**Prerequisites**](#prerequisites)
       - [**Build Command**](#build-command)
-      - [**What the Build Does**](#what-the-build-does)
-    - [Running the Docker Container](#running-the-docker-container)
-      - [**Basic Usage**](#basic-usage)
-      - [**Environment Variables**](#environment-variables)
-      - [**Docker Compose Example**](#docker-compose-example)
-    - [Docker Security Features](#docker-security-features)
-      - [**Security Best Practices Implemented**](#security-best-practices-implemented)
-      - [**Image Size Optimization**](#image-size-optimization)
-    - [Testing the Docker Container](#testing-the-docker-container)
-      - [**Health Check**](#health-check)
-      - [**MCP Inspector Testing**](#mcp-inspector-testing)
-      - [**Logs and Debugging**](#logs-and-debugging)
-    - [Production Deployment](#production-deployment)
-      - [**Recommended Production Setup**](#recommended-production-setup)
-      - [**Kubernetes Example**](#kubernetes-example)
   - [Troubleshooting](#troubleshooting)
     - [**Docker Issues**](#docker-issues)
       - [**Container Won't Start**](#container-wont-start)
@@ -1009,5 +993,57 @@ The project uses a **two-file dependency management strategy**:
 docker build -t mcp-instana:latest .
 
 # Build with a specific tag
-docker build -t mcp-instana:v1.0.0 .
+docker build -t mcp-instana:< image_tag > .
+
+#### **Run Command**
+```bash
+# Run the container (no credentials needed in the container)
+docker run -p 8080:8080 mcp-instana
+
+# Run with custom port
+docker run -p 8081:8080 mcp-instana
+```
+
+## Troubleshooting
+
+### **Docker Issues**
+
+#### **Container Won't Start**
+```bash
+# Check container logs
+docker logs <container_id>
+# Common issues:
+# 1. Port already in use
+# 2. Invalid container image
+# 3. Missing dependencies
+# Credentials are passed via HTTP headers from the MCP client
+```
+
+#### **Connection Issues**
+```bash
+# Test container connectivity
+docker exec -it <container_id> curl http://127.0.0.1:8080/health
+# Check port mapping
+docker port <container_id>
+```
+
+#### **Performance Issues**
+```bash
+# Check container resource usage
+docker stats <container_id>
+# Monitor container health
+docker inspect <container_id> | grep -A 10 Health
+```
+
+### **General Issues**
+
+- **GitHub Copilot**
+  - If you encounter issues with GitHub Copilot, try starting/stopping/restarting the server in the `mcp.json` file and keep only one server running at a time.
+
+- **Certificate Issues** 
+  - If you encounter certificate issues, such as `[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate`: 
+    - Check that you can reach the Instana API endpoint using `curl` or `wget` with SSL verification. 
+      - If that works, your Python environment may not be able to verify the certificate and might not have access to the same certificates as your shell or system. Ensure your Python environment uses system certificates (macOS). You can do this by installing certificates to Python:
+      `//Applications/Python\ 3.13/Install\ Certificates.command`
+    - If you cannot reach the endpoint with SSL verification, try without it. If that works, check your system's CA certificates and ensure they are up-to-date.
 ```
