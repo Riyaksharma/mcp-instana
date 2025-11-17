@@ -19,7 +19,7 @@ COPY README.md ./
 RUN pip install --no-cache-dir uv
 
 # Install only runtime dependencies using the minimal pyproject-runtime.toml
-RUN uv pip install --no-cache-dir --system .
+RUN pip install --no-cache-dir .
 
 # Stage 2: Runtime stage
 FROM python:3.11-slim AS runtime
