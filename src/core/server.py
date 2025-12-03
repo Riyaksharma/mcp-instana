@@ -264,7 +264,7 @@ def get_client_categories():
         from src.infrastructure.infrastructure_topology import (
             InfrastructureTopologyMCPTools,
         )
-        from src.settings.custom_dashboard_tools import CustomDashboardMCPTools
+        from src.core.custom_dashboard.manage_dashboard import ManageDashboardMCPTools
         from src.website.website_analyze import WebsiteAnalyzeMCPTools
         from src.website.website_catalog import WebsiteCatalogMCPTools
         from src.website.website_configuration import WebsiteConfigurationMCPTools
@@ -305,7 +305,7 @@ def get_client_categories():
             ('website_configuration_client', WebsiteConfigurationMCPTools),
         ],
         "settings": [
-            ('custom_dashboard_client', CustomDashboardMCPTools),
+            ('custom_dashboard_client', ManageDashboardMCPTools),
         ]
     }
 
